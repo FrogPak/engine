@@ -1,0 +1,23 @@
+{
+  "tag_name": "v1.2.0",
+  "html_url": "https://github.com/example/app/releases/tag/v1.2.0",
+  "prerelease": false,
+  "draft": false,
+  "assets": [
+    {
+      "name": "org.example.App-aarch64.flatpak",
+      "size": 2110008,
+      "browser_download_url": "https://github.com/example/app/releases/download/v1.2.0/org.example.App-aarch64.flatpak"
+    },
+    {
+      "name": "org.example.App-x86_64.flatpak",
+      "size": 2385880,
+      "browser_download_url": "https://github.com/example/app/releases/download/v1.2.0/org.example.App-x86_64.flatpak"
+    },
+    {
+      "name": "notes.txt",
+      "size": 12,
+      "browser_download_url": "https://github.com/example/app/releases/download/v1.2.0/notes.txt"
+    }
+  ]
+}

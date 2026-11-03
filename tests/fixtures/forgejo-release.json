@@ -1,0 +1,25 @@
+{
+  "id": 13216583,
+  "tag_name": "v1.2.0",
+  "name": "v1.2.0",
+  "html_url": "https://codeberg.org/example/app/releases/tag/v1.2.0",
+  "draft": false,
+  "prerelease": false,
+  "assets": [
+    {
+      "name": "org.example.App-x86_64.flatpak",
+      "size": 2385880,
+      "browser_download_url": "https://codeberg.org/example/app/releases/download/v1.2.0/org.example.App-x86_64.flatpak"
+    },
+    {
+      "name": "org.example.App-aarch64.flatpak",
+      "size": 2110008,
+      "browser_download_url": "https://codeberg.org/example/app/releases/download/v1.2.0/org.example.App-aarch64.flatpak"
+    },
+    {
+      "name": "checksums.txt",
+      "size": 120,
+      "browser_download_url": "https://codeberg.org/example/app/releases/download/v1.2.0/checksums.txt"
+    }
+  ]
+}
