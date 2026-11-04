@@ -1,0 +1,28 @@
+name: Docs
+
+# Rebuilds frogpak.github.io when the documentation changes. SITE_TOKEN is a
+# fine-grained token with Actions read and write on FrogPak/frogpak.github.io;
+# without it, the site picks the change up at its daily build.
+on:
+  push:
+    branches: [main]
+    paths:
+      - README.md
+      - 'docs/**'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rebuild frogpak.github.io
+        env:
+          GH_TOKEN: ${{ secrets.SITE_TOKEN }}
+        run: |
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "::notice::SITE_TOKEN is not set; the site picks this change up at its daily build."
+            exit 0
+          fi
+          gh workflow run build.yml --repo FrogPak/frogpak.github.io

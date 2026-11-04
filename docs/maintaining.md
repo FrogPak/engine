@@ -10,7 +10,7 @@ Breaking means a Pond or app that worked has to change something: a removed or r
 
 ## Releasing
 
-1. Update `__version__` in `frogpak/__init__.py` (or `releaser/__init__.py`) and commit.
+1. Add the version's entry at the top of `CHANGELOG.md`, set `__version__` in `frogpak/__init__.py` (or `releaser/__init__.py`) to the same number, and commit. The tests fail when the two differ, and on a release tag that does not match them.
 2. Tag and move the major tag:
 
    ```
@@ -30,6 +30,12 @@ Every Pond on `@v1` uses the new code at its next run, so test first: point a te
 
 - Restrict deletions and restrict updates.
 - Add repository administrators to the bypass list, so the maintainer can still move `v1`.
+
+## Documentation site
+
+[frogpak.github.io](https://frogpak.github.io/) is built by [FrogPak/frogpak.github.io](https://github.com/FrogPak/frogpak.github.io) from this repository's `README.md` and `docs/`. The **Docs** workflow here starts that build after a push to `main` that changes them. It needs a `SITE_TOKEN` secret in this repository: a fine-grained token with resource owner **FrogPak**, access to only `FrogPak/frogpak.github.io`, and **Actions: Read and write**. Without it, the site still rebuilds daily.
+
+A link to a missing page or heading fails the site build, so check the **Build site** run after changing links.
 
 ## Organization settings
 
