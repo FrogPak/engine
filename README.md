@@ -34,7 +34,7 @@ Publishing needs Python 3.10 or newer with PyYAML, plus `flatpak`, `ostree`, `gp
 
 ## The frog
 
-FrogPak's mascot is the golden mantella (*Mantella aurantiaca*), a tiny orange frog found only in a few small areas of forest and wetland in eastern Madagascar. It is listed as Endangered: its habitat is being lost to logging, mining and farming, and collection for the pet trade adds to the pressure. [Chester Zoo](https://www.chesterzoo.org/our-zoo/animals/golden-mantella-frog/) and its partner Madagasikara Voakajy work to protect it in the wild.
+FrogPak's mascot is the golden mantella (*Mantella aurantiaca*), a tiny orange frog found only in a few small areas of forest and wetland in eastern Madagascar. It is listed as Endangered: its habitat is being lost to logging, mining and farming, and collection for the pet trade adds to the pressure. [Chester Zoo](https://www.chesterzoo.org/our-zoo/animals/golden-mantella-frog/) and its partner [Madagasikara Voakajy](https://www.madagasikara-voakajy.org/) work to protect it in the wild. Please consider a [donation](https://conservationallies.org/partners/madagasikara-voakajy/) if it is within your means.
 
 ## License
 
