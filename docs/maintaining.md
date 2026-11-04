@@ -33,7 +33,7 @@ Every Pond on `@v1` uses the new code at its next run, so test first: point a te
 
 ## Documentation site
 
-[frogpak.github.io](https://frogpak.github.io/) is built by [FrogPak/frogpak.github.io](https://github.com/FrogPak/frogpak.github.io) from this repository's `README.md` and `docs/`. The **Docs** workflow here starts that build after a push to `main` that changes them. It needs a `SITE_TOKEN` secret in this repository: a fine-grained token with resource owner **FrogPak**, access to only `FrogPak/frogpak.github.io`, and **Actions: Read and write**. Without it, the site still rebuilds daily.
+[frogpak.org](https://frogpak.org/) is built by [FrogPak/frogpak.github.io](https://github.com/FrogPak/frogpak.github.io) from this repository's `README.md` and `docs/`. The **Docs** workflow here starts that build after a push to `main` that changes them. It needs a `SITE_TOKEN` secret in this repository: a fine-grained token with resource owner **FrogPak**, access to only `FrogPak/frogpak.github.io`, and **Actions: Read and write**. Without it, the site still rebuilds daily.
 
 A link to a missing page or heading fails the site build, so check the **Build site** run after changing links.
 

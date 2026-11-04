@@ -3,7 +3,7 @@
 ## 1.0.2
 
 - The engine reports its real version. 1.0.0 and 1.0.1 reported 0.1.0, so Ponds did not notice those upgrades until an app changed; every Pond republishes once after upgrading to 1.0.2.
-- The documentation site at frogpak.github.io rebuilds when `README.md` or `docs/` change.
+- The documentation site at frogpak.org rebuilds when `README.md` or `docs/` change.
 
 ## 1.0.1
 

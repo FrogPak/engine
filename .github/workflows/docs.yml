@@ -1,8 +1,9 @@
 name: Docs
 
-# Rebuilds frogpak.github.io when the documentation changes. SITE_TOKEN is a
-# fine-grained token with Actions read and write on FrogPak/frogpak.github.io;
-# without it, the site picks the change up at its daily build.
+# Rebuilds the documentation site, frogpak.org, when the documentation changes.
+# SITE_TOKEN is a fine-grained token with Actions read and write on
+# FrogPak/frogpak.github.io; without it, the site picks the change up at its
+# daily build.
 on:
   push:
     branches: [main]
@@ -17,7 +18,7 @@ jobs:
   site:
     runs-on: ubuntu-latest
     steps:
-      - name: Rebuild frogpak.github.io
+      - name: Rebuild frogpak.org
         env:
           GH_TOKEN: ${{ secrets.SITE_TOKEN }}
         run: |
