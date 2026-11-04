@@ -5,7 +5,7 @@ Messages appear at the top of the workflow run's summary page and in its log.
 ## The run stops
 
 **"Pond not set up: Settings > Pages > Source must be GitHub Actions"**
-Set it as described in [GitHub Pages](setup.md#github-pages). On scheduled runs this is a warning, so an unfinished pond does not fail every hour.
+Set it as described in [GitHub Pages](setup.md#github-pages). On scheduled runs this is a warning, so an unfinished Pond does not fail every hour.
 
 **"Pond not set up: the GPG_PRIVATE_KEY secret is missing"** or **"No signing key found"**
 Add the secret as described in [Signing key](setup.md#signing-key). Check the name is exactly `GPG_PRIVATE_KEY` and that the value includes the `BEGIN` and `END` lines.
@@ -28,7 +28,7 @@ The log has a warning for every skipped app:
 - *has no published release*: the repository has no release or only pre-releases, or `repo` is wrong or private.
 - *no asset in v1.0 matches …*: the release has no file matching the app's `assets` pattern. Compare the file names on the release page with the pattern.
 - *N assets match … skipped*: the pattern matches several files; make it more specific.
-- *contains app/…, expected app/…*: the bundle holds a different app ID or architecture than the pond entry.
+- *contains app/…, expected app/…*: the bundle holds a different app ID or architecture than the Pond entry.
 
 ## The page didn't update
 
@@ -47,4 +47,4 @@ flatpak remote-add POND_REMOTE https://OWNER.github.io/REPOSITORY/index.flatpakr
 
 ## The schedule stopped
 
-GitHub disables scheduled workflows in repositories with 60 days of no activity. The pond guards against this, but if it happens, open **Actions > Publish** and choose **Enable workflow**.
+GitHub disables scheduled workflows in repositories with 60 days of no activity. The Pond guards against this, but if it happens, open **Actions > Publish** and choose **Enable workflow**.

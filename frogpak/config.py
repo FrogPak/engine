@@ -1,4 +1,4 @@
-"""Loads and validates a pond's frogpak.yml."""
+"""Loads and validates a Pond's frogpak.yml."""
 import re
 import string
 from dataclasses import dataclass, field

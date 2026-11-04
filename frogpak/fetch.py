@@ -68,7 +68,7 @@ def survey(config):
 
 
 def fingerprint(config, states, engine_version):
-    """What a publish depends on. A difference from the published copy means the pond is out of date."""
+    """What a publish depends on. A difference from the published copy means the Pond is out of date."""
     config_text = config.path.read_bytes() if config.path and config.path.exists() else b""
     return {
         "engine": engine_version,

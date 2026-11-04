@@ -1,4 +1,4 @@
-"""Resolves the pond's logo and favicon and renders the PNG sizes browsers and software centers need."""
+"""Resolves the Pond's logo and favicon and renders the PNG sizes browsers and software centers need."""
 import base64
 import re
 import struct
@@ -40,7 +40,7 @@ def sniff(data):
 
 
 def read_file(spec, pond_dir, fallback):
-    """Reads a pond repository path or an https URL; returns (bytes, external) or None with a warning."""
+    """Reads a Pond repository path or an https URL; returns (bytes, external) or None with a warning."""
     try:
         if spec.startswith("http://"):
             log.warning(f"{spec}: URLs must use https; {fallback}")
@@ -50,7 +50,7 @@ def read_file(spec, pond_dir, fallback):
         base = Path(pond_dir).resolve()
         path = (base / spec).resolve()
         if base not in path.parents:
-            log.warning(f"{spec}: paths must stay inside the pond repository; {fallback}")
+            log.warning(f"{spec}: paths must stay inside the Pond repository; {fallback}")
             return None
         if path.stat().st_size > MAX_BYTES:
             log.warning(f"{spec}: larger than 2 MB; {fallback}")
@@ -161,7 +161,7 @@ def write_logo(image, site, stem):
     """Writes the logo for the page header; returns its file name.
 
     SVGs from URLs are published as PNG renders, so third-party SVG content
-    is never served from the pond's origin.
+    is never served from the Pond's origin.
     """
     site = Path(site)
     if image.kind == "svg" and image.external:

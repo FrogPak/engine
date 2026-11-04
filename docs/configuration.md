@@ -1,6 +1,6 @@
 # Configuration reference
 
-A pond is configured by `frogpak.yml` at the root of its repository. Unknown or misspelt keys are errors, and every problem in the file is reported at once.
+A Pond is configured by `frogpak.yml` at the root of its repository. Unknown or misspelt keys are errors, and every problem in the file is reported at once.
 
 ```yaml
 pond:
@@ -23,7 +23,7 @@ apps:
     assets: "paint-{arch}.flatpak"
 ```
 
-## pond
+## Pond
 
 | Key | Required | Meaning |
 | --- | --- | --- |
@@ -49,7 +49,7 @@ Each key is an app ID, such as `org.example.Notes`. Under it:
 | `assets` | no | Pattern for the release files; default `{app_id}-{arch}.flatpak` |
 | `forge` | no | `github`, `forgejo`, `gitea` or `gitlab`, for a self-hosted forge FrogPak cannot recognize |
 
-The pond publishes each app's newest release that is not a pre-release. Apps that cannot be published, such as one with no release or no matching files, are skipped with a warning and the rest are published.
+The Pond publishes each app's newest release that is not a pre-release. Apps that cannot be published, such as one with no release or no matching files, are skipped with a warning and the rest are published.
 
 ### Asset patterns
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+
+- Documentation, workflow and log text capitalize Pond as FrogPak's term for a deployment. Configuration keys, inputs and file names are unchanged.
+
 ## 1.0.0
 
 First release.

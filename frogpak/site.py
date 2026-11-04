@@ -153,7 +153,7 @@ def _web(url):
 
 
 def write_app_icon(site, entry, meta):
-    """Writes the app's icon as a PNG, so SVG content from a bundle is never served from the pond."""
+    """Writes the app's icon as a PNG, so SVG content from a bundle is never served from the Pond."""
     if not meta.icon:
         return None
     icons = Path(site) / "icons"

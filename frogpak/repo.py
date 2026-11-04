@@ -72,7 +72,7 @@ def import_bundle(repo, key, app_id, arch, path, workdir, arches=(), taken=()):
 
     With arch None, any architecture in arches is accepted unless its ref is in taken.
     """
-    # Staged in its own repo: importing straight into the pond would let a mislabeled
+    # Staged in its own repo: importing straight into the Pond would let a mislabeled
     # bundle overwrite another app's ref before it could be checked.
     stage = Path(workdir) / f"stage-{app_id}-{arch}"
     shutil.rmtree(stage, ignore_errors=True)

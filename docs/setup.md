@@ -1,6 +1,6 @@
-# Setting up a pond
+# Setting up a Pond
 
-A pond is your own Flatpak remote: a GitHub repository that FrogPak turns into a signed Flatpak repository with a landing page, served by GitHub Pages. Setup takes about fifteen minutes and two terminal commands on a Linux machine.
+A Pond is your own Flatpak remote: a GitHub repository that FrogPak turns into a signed Flatpak repository with a landing page, served by GitHub Pages. Setup takes about fifteen minutes and two terminal commands on a Linux machine.
 
 ## Create the repository
 
@@ -32,7 +32,7 @@ The key has no passphrase because the workflow cannot type one; GitHub's secret 
 
 If the key is ever lost, create a new one and replace the secret. Everyone who added your remote then has to remove it and add it again, because the old key no longer matches.
 
-## Configure the pond
+## Configure the Pond
 
 Edit `frogpak.yml` in the repository. The minimum is a title, a remote name and your apps:
 
@@ -46,7 +46,7 @@ apps:
     repo: alex/notes
 ```
 
-`remote` is the name people type, as in `flatpak install alex org.example.Notes`. Each app needs a GitHub release with a `.flatpak` file per architecture; [Feeding a pond](apps.md) explains the options. The [configuration reference](configuration.md) covers logos, colors and asset names.
+`remote` is the name people type, as in `flatpak install alex org.example.Notes`. Each app needs a GitHub release with a `.flatpak` file per architecture; [Feeding a Pond](apps.md) explains the options. The [configuration reference](configuration.md) covers logos, colors and asset names.
 
 ## Publish
 
@@ -56,8 +56,8 @@ If something is missing, the run stops with a message naming it; [Troubleshootin
 
 ## What happens next
 
-- Every hour, the pond checks each app's latest release and rebuilds only when something changed.
+- Every hour, the Pond checks each app's latest release and rebuilds only when something changed.
 - A push to the repository, such as an edit to `frogpak.yml`, rebuilds at once.
 - **Run workflow** with **Rebuild even if nothing changed** forces a rebuild.
-- Apps can trigger the pond the moment they release; see [Feeding a pond](apps.md#triggering-a-pond).
-- GitHub stops scheduled workflows in repositories with no activity for 60 days. The pond keeps itself active, and if the repository has had no commit for 50 days it makes an empty commit to stay that way.
+- Apps can trigger the Pond the moment they release; see [Feeding a Pond](apps.md#triggering-a-pond).
+- GitHub stops scheduled workflows in repositories with no activity for 60 days. The Pond keeps itself active, and if the repository has had no commit for 50 days it makes an empty commit to stay that way.

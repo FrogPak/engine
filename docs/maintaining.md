@@ -6,7 +6,7 @@ For maintainers of FrogPak/engine and FrogPak/releaser. Both are released the sa
 
 Releases follow semantic versioning. Ponds and apps call `@v1`, a tag that moves to each `1.x.y` release, so only a breaking change gets a new major tag.
 
-Breaking means a pond or app that worked has to change something: a removed or renamed config key or input, a changed default asset name, a different output layout.
+Breaking means a Pond or app that worked has to change something: a removed or renamed config key or input, a changed default asset name, a different output layout.
 
 ## Releasing
 
@@ -22,7 +22,7 @@ Breaking means a pond or app that worked has to change something: a removed or r
 
 3. Create a GitHub release for `v1.2.0` with the changes.
 
-Every pond on `@v1` uses the new code at its next run, so test first: point a test pond's workflow at the branch or commit (`@main` or `@<sha>`) and run it.
+Every Pond on `@v1` uses the new code at its next run, so test first: point a test Pond's workflow at the branch or commit (`@main` or `@<sha>`) and run it.
 
 ## Protecting tags
 
@@ -34,4 +34,4 @@ Every pond on `@v1` uses the new code at its next run, so test first: point a te
 ## Organization settings
 
 - **Settings > Authentication security:** require two-factor authentication.
-- Keep the number of people with write access to these two repositories small; their code runs with every pond's signing key.
+- Keep the number of people with write access to these two repositories small; their code runs with every Pond's signing key.

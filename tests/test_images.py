@@ -59,7 +59,7 @@ class ImageTests(unittest.TestCase):
     def test_paths_must_stay_in_repo(self):
         logo, _, _ = images.resolve(pond(logo="../outside.svg"), self.pond_dir)
         self.assertEqual(logo.origin, "FrogPak default logo")
-        self.assertTrue(any("inside the pond repository" in w for w in log.warnings))
+        self.assertTrue(any("inside the Pond repository" in w for w in log.warnings))
 
     def test_unreadable_or_wrong_type_falls_back(self):
         (self.pond_dir / "logo.gif").write_bytes(b"GIF89a....")

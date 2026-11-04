@@ -169,7 +169,7 @@ def main(argv=None):
     check = commands.add_parser("check", help="validate frogpak.yml")
     check.add_argument("--config", default="frogpak.yml")
 
-    poll = commands.add_parser("poll", help="report whether the published pond is out of date")
+    poll = commands.add_parser("poll", help="report whether the published Pond is out of date")
     poll.add_argument("--config", default="frogpak.yml")
     poll.add_argument("--base-url", required=True)
 

@@ -1,9 +1,9 @@
-# Publishes a FrogPak pond: checks each app's latest release, rebuilds the signed
+# Publishes a FrogPak Pond: checks each app's latest release, rebuilds the signed
 # Flatpak repository and landing page when anything changed, and deploys them
 # to GitHub Pages.
 #
-# Called from the pond repository's own workflow, which supplies the triggers,
-# the permissions and the signing key. The pond template has that workflow.
+# Called from the Pond repository's own workflow, which supplies the triggers,
+# the permissions and the signing key. The Pond template has that workflow.
 #
 # Caller requirements:
 #   - permissions: contents write (keep-alive commit), actions write (re-enabling
@@ -12,13 +12,13 @@
 #   - secret GPG_PRIVATE_KEY: the armored private signing key.
 #   - Settings > Pages > Source set to "GitHub Actions".
 
-name: FrogPak pond
+name: FrogPak Pond
 
 on:
   workflow_call:
     inputs:
       config:
-        description: Path of the pond configuration file.
+        description: Path of the Pond configuration file.
         type: string
         default: frogpak.yml
       force:
@@ -92,7 +92,7 @@ jobs:
         continue-on-error: true
 
       - name: Check setup
-        # Scheduled runs only warn, so a pond still being set up does not fail every hour.
+        # Scheduled runs only warn, so a Pond still being set up does not fail every hour.
         id: setup
         env:
           PAGES: ${{ steps.pages.outcome }}

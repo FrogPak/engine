@@ -1,4 +1,4 @@
-"""Turns the pond's theme colors into the landing page's light and dark palettes."""
+"""Turns the Pond's theme colors into the landing page's light and dark palettes."""
 import math
 
 from . import log
