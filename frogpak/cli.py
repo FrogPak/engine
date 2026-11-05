@@ -5,9 +5,10 @@ import os
 import shutil
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
-from . import __version__, config, fetch, http, images, log, repo, site, sources
+from . import __version__, config, fetch, http, images, licenses, log, repo, site, sources
 
 
 def _base_url(value):
@@ -24,6 +25,13 @@ def _output(name, value):
 
 def _normalize(data):
     return json.loads(json.dumps(data))
+
+
+def _now():
+    """The publish time for the page. SOURCE_DATE_EPOCH fixes it, for reproducible builds."""
+    epoch = os.environ.get("SOURCE_DATE_EPOCH", "")
+    moment = datetime.fromtimestamp(int(epoch), timezone.utc) if epoch.isdigit() else datetime.now(timezone.utc)
+    return moment.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def cmd_check(args):
@@ -130,11 +138,15 @@ def cmd_publish(args):
         except (sources.SourceError, http.NetworkError) as error:
             log.warning(f"{state.app.id}: {error}")
             info = sources.RepoInfo(url=state.source.web, description="")
+        license, license_source = licenses.resolve(state.app.id, state.app.license, info.license, meta.license)
         entry = {
             "id": state.app.id,
             "name": meta.name or state.app.name,
             "summary": meta.summary or info.description,
             "version": meta.version or state.release.tag.removeprefix("v"),
+            "released": state.release.published or meta.released,
+            "license": license,
+            "license_source": license_source,
             "url": info.url,
             "arches": sorted(r.split("/")[2] for r in refs),
         }
@@ -151,8 +163,10 @@ def cmd_publish(args):
             custom_css = True
 
     fingerprint = fetch.fingerprint(cfg, states, __version__)
+    # The publish time is shown on the page but kept out of the fingerprint, so it never
+    # makes a Pond look out of date by itself.
     site.write(out, pond, base_url, args.source_url, entries, logo_name, dark_name, has_svg, fingerprint,
-               custom_css)
+               custom_css, updated=_now())
     if not size_guard(out, bundles):
         return 1
     log.info(f"Published {len(entries)} of {len(cfg.apps)} app(s) to {out}")

@@ -1,6 +1,7 @@
 """The interface every forge adapter implements. Nothing outside sources/ may assume a forge."""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from datetime import date, datetime, timezone
 from urllib.parse import urlparse
 
 
@@ -18,12 +19,16 @@ class Release:
     tag: str
     url: str
     assets: tuple
+    # When the release was published, as from iso_time; None when the forge does not say.
+    published: str | None = None
 
 
 @dataclass(frozen=True)
 class RepoInfo:
     url: str
     description: str
+    # The license the forge detected, as an SPDX expression; None when it cannot tell.
+    license: str | None = None
 
 
 class SourceError(Exception):
@@ -39,6 +44,32 @@ def web_url(url, what):
 
 def one_line(text):
     return " ".join((text or "").split())
+
+
+def iso_time(value):
+    """A timestamp as 2026-11-03T18:04:00Z, or a date as 2026-11-03; None if unreadable.
+
+    Accepts ISO 8601 text and Unix timestamps, as forges and AppStream write them.
+    """
+    try:
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            moment = datetime.fromtimestamp(value, timezone.utc)
+        elif isinstance(value, str) and value.strip():
+            text = value.strip()
+            if text.isdigit():
+                moment = datetime.fromtimestamp(int(text), timezone.utc)
+            elif len(text) == 10:
+                return date.fromisoformat(text).isoformat()
+            else:
+                # Python 3.10 does not read a trailing Z.
+                moment = datetime.fromisoformat(text.replace("Z", "+00:00").replace("z", "+00:00"))
+        else:
+            return None
+    except (ValueError, OverflowError, OSError):
+        return None
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return moment.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 class Source(ABC):

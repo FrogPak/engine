@@ -1,7 +1,7 @@
 import os
 
 from .. import http
-from .base import Asset, Release, RepoInfo, Source, SourceError, one_line, web_url
+from .base import Asset, Release, RepoInfo, Source, SourceError, iso_time, one_line, web_url
 
 API = "https://api.github.com"
 
@@ -33,8 +33,11 @@ class GitHub(Source):
         data = self._get("")
         if data is None:
             raise SourceError(f"{self.owner_repo}: repository not found or not public")
+        # GitHub reports NOASSERTION when a LICENSE file exists but is not one it knows.
+        license = data.get("license")
+        spdx_id = one_line(license.get("spdx_id")) if isinstance(license, dict) else ""
         return RepoInfo(url=web_url(data.get("html_url"), self.owner_repo),
-                        description=one_line(data.get("description")))
+                        description=one_line(data.get("description")), license=spdx_id or None)
 
     def latest_release(self):
         # /releases/latest skips drafts and pre-releases.
@@ -43,7 +46,8 @@ class GitHub(Source):
             return None
         assets = tuple(Asset(a["name"], web_url(a.get("browser_download_url"), a["name"]), a.get("size"), a.get("id"))
                        for a in data.get("assets", []))
-        return Release(tag=data["tag_name"], url=web_url(data.get("html_url"), data["tag_name"]), assets=assets)
+        return Release(tag=data["tag_name"], url=web_url(data.get("html_url"), data["tag_name"]), assets=assets,
+                       published=iso_time(data.get("published_at")))
 
     def download(self, asset, dest):
         # Public assets need no token, and urllib would forward the Authorization header

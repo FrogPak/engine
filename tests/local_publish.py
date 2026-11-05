@@ -22,14 +22,16 @@ class LocalSource(Source):
         self.bundle_dir = Path(bundle_dir)
 
     def info(self):
-        return RepoInfo(url=f"https://example.org/{self.name}", description=f"{self.name} from a local folder")
+        return RepoInfo(url=f"https://example.org/{self.name}", description=f"{self.name} from a local folder",
+                        license="NOASSERTION" if self.name.endswith("/no-license") else "MIT")
 
     def latest_release(self):
         if self.name.endswith("/no-release"):
             return None
         files = sorted(f for f in self.bundle_dir.iterdir() if f.is_file())
         assets = tuple(Asset(f.name, f.resolve().as_uri(), f.stat().st_size) for f in files)
-        return Release(tag="v9.9.9", url="https://example.org/release", assets=assets)
+        return Release(tag="v9.9.9", url="https://example.org/release", assets=assets,
+                       published="2026-01-02T03:04:05Z")
 
 
 def main():

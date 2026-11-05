@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from . import log
+from .sources.base import iso_time
 
 FLATHUB_REPO = "https://dl.flathub.org/repo/flathub.flatpakrepo"
 SETUP_DOCS = "https://github.com/FrogPak/engine/blob/main/docs/setup.md#signing-key"
@@ -36,6 +37,10 @@ class Metadata:
     name: str | None = None
     summary: str | None = None
     version: str | None = None
+    # The newest <release>'s date, as from iso_time.
+    released: str | None = None
+    # <project_license>, the license of the app itself; <metadata_license> covers only the file.
+    license: str | None = None
     icon: bytes | None = None
     icon_ext: str | None = None
 
@@ -137,10 +142,12 @@ def read_metadata(repo, ref, app_id):
             break
         meta.name = _text(_untranslated(root, "name"))
         meta.summary = _text(_untranslated(root, "summary"))
+        meta.license = _text(root.find("project_license")) or None
         # AppStream lists releases newest first.
         release = root.find("./releases/release")
         if release is not None:
             meta.version = release.get("version")
+            meta.released = iso_time(release.get("date")) or iso_time(release.get("timestamp"))
         break
     for template in ICON_PATHS:
         path = "/export/share/icons/hicolor/" + template.format(id=app_id)

@@ -13,7 +13,9 @@ PLACEHOLDERS = {"app_id", "name", "arch"}
 
 POND_KEYS = {"title", "subtitle", "remote", "arches", "logo", "logo-dark", "favicon", "theme", "css"}
 THEME_KEYS = ("accent", "accent-dark", "background", "background-dark")
-APP_KEYS = {"repo", "assets", "forge"}
+APP_KEYS = {"repo", "assets", "forge", "license"}
+LICENSE_KEYWORDS = ("auto", "forge", "repo", "meta", "metainfo")
+LICENSE_RE = re.compile(r"^[A-Za-z0-9.+:=/()_ -]+$")
 
 REMOTE_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 ARCH_RE = re.compile(r"^[a-z0-9_]+$")
@@ -38,6 +40,8 @@ class App:
     repo: str
     assets: str = DEFAULT_ASSETS
     forge: str | None = None
+    # auto, forge, meta, or a license expression used when neither source states one.
+    license: str = "auto"
 
     @property
     def name(self):
@@ -227,8 +231,14 @@ def parse(text, path="frogpak.yml"):
         forge = _string(settings.get("forge"), f"{where}.forge", problems)
         if forge and forge not in FORGES:
             problems.append(f"{where}.forge must be one of {', '.join(FORGES)}")
+        license = _string(settings.get("license"), f"{where}.license", problems) or "auto"
+        if license.lower() in LICENSE_KEYWORDS:
+            license = {"repo": "forge", "metainfo": "meta"}.get(license.lower(), license.lower())
+        elif len(license) > 200 or not LICENSE_RE.match(license):
+            problems.append(f"{where}.license must be auto, forge, meta, or an SPDX license such as "
+                            f"GPL-3.0-or-later; got {license!r}")
         if repo:
-            apps.append(App(app_id, repo, assets, forge))
+            apps.append(App(app_id, repo, assets, forge, license))
 
     if problems:
         raise ConfigError(path, problems)

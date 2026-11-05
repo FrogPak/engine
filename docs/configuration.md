@@ -21,6 +21,7 @@ apps:
   org.example.Paint:
     repo: someone/paint
     assets: "paint-{arch}.flatpak"
+    license: GPL-3.0-or-later
 ```
 
 ## Pond
@@ -48,8 +49,29 @@ Each key is an app ID, such as `org.example.Notes`. Under it:
 | `repo` | yes | Where the releases are: `owner/repo` on GitHub, or a full `https://` address on GitHub, Codeberg, Forgejo or Gitea |
 | `assets` | no | Pattern for the release files; default `{app_id}-{arch}.flatpak` |
 | `forge` | no | `github`, `forgejo`, `gitea` or `gitlab`, for a self-hosted forge FrogPak cannot recognize |
+| `license` | no | Which license to show on the app's card; default `auto`. See [Licenses](#licenses) |
 
 The Pond publishes each app's newest release that is not a pre-release. Apps that cannot be published, such as one with no release or no matching files, are skipped with a warning and the rest are published.
+
+Each app's card shows its version, the date its release was published, and its license. The page shows when it was last published, in each visitor's own time zone; a Pond only republishes when something changes, so that is when the page last changed, not when it was last checked.
+
+### Licenses
+
+The license on a card comes from the app's own sources first. The Pond's maintainer is not necessarily the app's author, so a license written in `frogpak.yml` is only the last fallback.
+
+| `license` | Card shows |
+| --- | --- |
+| `auto` (default) | The license the forge detects in the repository; if it cannot tell, the `<project_license>` in the bundle's metainfo |
+| `forge` or `repo` | Only the forge's |
+| `meta` or `metainfo` | Only the metainfo's |
+| An SPDX license, such as `GPL-3.0-or-later` | As `auto`; this license only when neither source states one |
+
+- GitHub detects the license from the repository's LICENSE file. Codeberg and Gitea report it on newer versions; when one detects several license files, they are not used, since they do not say whether both apply.
+- A forge that cannot identify the license, such as GitHub's `NOASSERTION`, counts as stating none.
+- When the forge and the metainfo name the same license and the metainfo is more precise, the metainfo's is shown. Forges report GNU licenses as `GPL-3.0`, since a LICENSE file does not say whether `-only` or `-or-later` was meant.
+- The publish warns when the forge and the metainfo disagree, and when a license in `frogpak.yml` differs from the one shown. `forge` or `meta` settles a disagreement without a warning.
+- With no license from any source, the card says *License not stated*.
+- SPDX IDs on the card link to their pages on spdx.org.
 
 ### Asset patterns
 

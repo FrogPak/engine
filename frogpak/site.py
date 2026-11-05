@@ -4,7 +4,7 @@ import json
 from urllib.parse import urlparse
 from pathlib import Path
 
-from . import images, theme
+from . import images, licenses, theme
 
 STATE_FILE = "apps.json"
 GITHUB_MARK = (
@@ -54,6 +54,12 @@ a {{ color: var(--accent); }}
 .app h3 {{ margin: 0; font-size: 1.1rem; }}
 .app h3 small {{ color: var(--muted); font-weight: normal; font-size: .85rem; margin-left: .35rem; }}
 .app p {{ margin: .25rem 0 .75rem; }}
+.badge {{
+  display: inline-block; font-size: .8rem; line-height: 1.4; color: var(--muted);
+  border: 1px solid var(--border); border-radius: 999px; padding: .05rem .6rem;
+}}
+.updated {{ margin: 0 0 1rem; }}
+.facts {{ display: flex; flex-wrap: wrap; gap: .35rem; margin: 0 0 .75rem; }}
 .links {{ font-size: .9rem; margin-top: .6rem; }}
 .links a {{ margin-right: 1rem; }}
 .cmd {{
@@ -90,6 +96,7 @@ footer {{ margin-top: 3rem; font-size: .85rem; color: var(--muted); text-align: 
 {source}
 </div>
 {subtitle}
+{updated}
 
 <h2>Add the repository</h2>
 <div class="card">
@@ -117,6 +124,16 @@ function setScope(scope) {{
 for (const button of document.querySelectorAll("[data-scope]")) {{
   button.addEventListener("click", () => setScope(button.dataset.scope));
 }}
+// Dates are written in UTC and shown in the visitor's own time zone and format.
+for (const time of document.querySelectorAll("time[data-format]")) {{
+  const value = time.getAttribute("datetime");
+  const moment = new Date(value);
+  if (Number.isNaN(moment.getTime())) continue;
+  const options = time.dataset.format === "date" ? {{ dateStyle: "medium" }} : {{ dateStyle: "medium", timeStyle: "short" }};
+  // A date with no time is a calendar day, not midnight UTC.
+  if (value.length === 10) options.timeZone = "UTC";
+  try {{ time.textContent = new Intl.DateTimeFormat(undefined, options).format(moment); }} catch (error) {{}}
+}}
 let savedScope = null;
 try {{ savedScope = localStorage.getItem(SCOPE_KEY); }} catch (error) {{}}
 setScope(savedScope === "user" ? "user" : "system");
@@ -138,6 +155,7 @@ APP = """<div class="card app">
 <div class="body">
 <h3>{name}{version}</h3>
 <p>{summary}</p>
+<div class="facts">{facts}</div>
 <div class="cmd"><code>flatpak install<span class="scope"></span> {remote} {app_id}</code><button type="button">Copy</button></div>
 <div class="links"><a href="{url}">{mark}Source</a><a href="{app_id}.flatpakref">Install file (.flatpakref)</a></div>
 </div>
@@ -150,6 +168,32 @@ def _e(value):
 
 def _web(url):
     return url if urlparse(url or "").scheme in ("http", "https") else "#"
+
+
+def time_markup(value, fmt):
+    """A <time> the page script shows in the visitor's time zone; UTC text until it runs."""
+    fallback = value[:10] if fmt == "date" or len(value) == 10 else value[:16].replace("T", " ") + " UTC"
+    return f'<time datetime="{_e(value)}" data-format="{fmt}">{_e(fallback)}</time>'
+
+
+def license_markup(expression):
+    """The license with each SPDX ID linked to its page."""
+    if not expression:
+        return '<span class="badge">License not stated</span>'
+    pieces = []
+    for text, url in licenses.parts(expression):
+        pieces.append(f'<a href="{_e(url)}">{_e(text)}</a>' if url else _e(text))
+    # Parentheses hug what they enclose.
+    joined = " ".join(pieces).replace("( ", "(").replace(" )", ")")
+    return f'<span class="badge" title="License">{joined}</span>'
+
+
+def facts_markup(entry):
+    facts = []
+    if entry.get("released"):
+        facts.append(f'<span class="badge">Released {time_markup(entry["released"], "date")}</span>')
+    facts.append(license_markup(entry.get("license")))
+    return "".join(facts)
 
 
 def write_app_icon(site, entry, meta):
@@ -188,8 +232,11 @@ def logo_markup(logo_name, dark_name):
 
 
 def write(site, pond, base_url, source_url, entries, logo_name, dark_name, has_svg_favicon, state,
-          custom_css=False):
-    """entries: dicts with id, name, summary, version, url, icon."""
+          custom_css=False, updated=None):
+    """entries: dicts with id, name, summary, version, released, license, url, icon.
+
+    updated is the publish time, shown on the page; it is not part of state.
+    """
     cards = []
     for entry in entries:
         icon = (f'<img src="{_e(entry["icon"])}" alt="">' if entry["icon"]
@@ -197,7 +244,7 @@ def write(site, pond, base_url, source_url, entries, logo_name, dark_name, has_s
         version = f'<small>{_e(entry["version"])}</small>' if entry["version"] else ""
         cards.append(APP.format(
             icon=icon, name=_e(entry["name"]), version=version,
-            summary=_e(entry["summary"] or "No description yet."),
+            summary=_e(entry["summary"] or "No description yet."), facts=facts_markup(entry),
             remote=_e(pond.remote), app_id=_e(entry["id"]), url=_e(_web(entry["url"])), mark=GITHUB_MARK
             if "github.com" in (entry["url"] or "") else ""))
     source = f'<a href="{_e(source_url)}">{GITHUB_MARK}Source</a>' if source_url else ""
@@ -208,6 +255,8 @@ def write(site, pond, base_url, source_url, entries, logo_name, dark_name, has_s
         dark=theme.css_variables(dark),
         title=_e(pond.title),
         subtitle=f"<p>{_e(pond.subtitle)}</p>" if pond.subtitle else "",
+        updated=(f'<p class="updated"><span class="badge">Updated {time_markup(updated, "datetime")}</span></p>'
+                 if updated else ""),
         favicons=favicon_links(has_svg_favicon),
         logo=logo_markup(logo_name, dark_name),
         source=source,
@@ -216,6 +265,8 @@ def write(site, pond, base_url, source_url, entries, logo_name, dark_name, has_s
         apps="\n".join(cards) or "<p>No apps yet.</p>",
     )
     Path(site, "index.html").write_text(page)
-    public = [{k: e.get(k) for k in ("id", "name", "summary", "version", "url", "icon", "arches")}
+    public = [{k: e.get(k) for k in ("id", "name", "summary", "version", "released", "license", "license_source",
+                                     "url", "icon", "arches")}
               for e in entries]
-    Path(site, STATE_FILE).write_text(json.dumps({"frogpak": 1, "apps": public, "state": state}, indent=2) + "\n")
+    Path(site, STATE_FILE).write_text(json.dumps({"frogpak": 1, "updated": updated, "apps": public, "state": state},
+                                                 indent=2) + "\n")

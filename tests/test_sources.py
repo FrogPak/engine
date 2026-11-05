@@ -45,6 +45,8 @@ class GitHubTests(unittest.TestCase):
             release = GitHub("example/app").latest_release()
         self.assertTrue(get.call_args[0][0].endswith("/repos/example/app/releases/latest"))
         self.assertEqual(release.tag, "v1.2.0")
+        # published_at, not created_at: a release can be drafted long before it is out.
+        self.assertEqual(release.published, "2026-11-03T18:04:00Z")
         self.assertEqual([a.name for a in release.assets],
                          ["org.example.App-aarch64.flatpak", "org.example.App-x86_64.flatpak", "notes.txt"])
 
@@ -52,6 +54,14 @@ class GitHubTests(unittest.TestCase):
         error = http.HTTPError("u", 404)
         with mock.patch.object(http, "get_json", side_effect=error):
             self.assertIsNone(GitHub("example/app").latest_release())
+
+    def test_info_license(self):
+        repo = {"html_url": "https://github.com/example/app", "description": "An app"}
+        cases = (({"spdx_id": "GPL-3.0"}, "GPL-3.0"), ({"spdx_id": "NOASSERTION"}, "NOASSERTION"),
+                 (None, None), ({}, None))
+        for license, expected in cases:
+            with mock.patch.object(http, "get_json", return_value={**repo, "license": license}):
+                self.assertEqual(GitHub("example/app").info().license, expected)
 
     def test_other_http_errors_become_source_errors(self):
         with mock.patch.object(http, "get_json", side_effect=http.HTTPError("u", 403)):
@@ -66,6 +76,7 @@ class ForgejoTests(unittest.TestCase):
             release = Forgejo("https://codeberg.org", "example/app").latest_release()
         self.assertEqual(get.call_args[0][0], "https://codeberg.org/api/v1/repos/example/app/releases/latest")
         self.assertEqual(release.tag, "v1.2.0")
+        self.assertEqual(release.published, "2026-11-03T18:04:00Z")
         found = fetch.match_assets(app(), release, ("x86_64", "aarch64"))
         self.assertEqual(sorted(arch for arch, _ in found), ["aarch64", "x86_64"])
 
@@ -78,6 +89,24 @@ class ForgejoTests(unittest.TestCase):
         with mock.patch.object(http, "get_json", side_effect=http.HTTPError("u", 500)):
             with self.assertRaises(sources.SourceError):
                 source.latest_release()
+
+    def test_info_license(self):
+        repo = {"html_url": "https://codeberg.org/example/app", "description": "An app"}
+        # Several detected files do not say whether both apply, so none is used.
+        for found, expected in ((["MIT"], "MIT"), (["MIT", "Apache-2.0"], None), ([], None), (None, None)):
+            with mock.patch.object(http, "get_json", return_value={**repo, "licenses": found}):
+                self.assertEqual(Forgejo("https://codeberg.org", "example/app").info().license, expected)
+
+
+class TimeTests(unittest.TestCase):
+    def test_iso_time(self):
+        from frogpak.sources.base import iso_time
+        self.assertEqual(iso_time("2026-11-03T19:04:00+01:00"), "2026-11-03T18:04:00Z")
+        self.assertEqual(iso_time("2026-11-03T18:04:00Z"), "2026-11-03T18:04:00Z")
+        self.assertEqual(iso_time("2026-11-03"), "2026-11-03")
+        self.assertEqual(iso_time("1762193040"), "2025-11-03T18:04:00Z")
+        for bad in (None, "", "soon", "2026-13-40", True):
+            self.assertIsNone(iso_time(bad))
 
 
 class SafetyTests(unittest.TestCase):

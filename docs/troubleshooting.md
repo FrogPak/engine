@@ -30,6 +30,14 @@ The log has a warning for every skipped app:
 - *N assets match … skipped*: the pattern matches several files; make it more specific.
 - *contains app/…, expected app/…*: the bundle holds a different app ID or architecture than the Pond entry.
 
+## An app shows the wrong license
+
+The log warns when the sources disagree:
+
+- *the forge reports license A, but the metainfo says B*: the repository's LICENSE file and the app's metainfo name different licenses. The forge's is shown. If the metainfo is right, set `license: meta` for the app, and consider telling its developer.
+- *license: A in frogpak.yml differs from B*: a license in `frogpak.yml` is only used when neither source states one. Remove it, or ask the app's developer to correct the source that is wrong.
+- *license is set to forge (or meta), but … states no license*: that source has nothing; use `auto` to fall back to the other.
+
 ## The page didn't update
 
 - Check that the release is not a pre-release.

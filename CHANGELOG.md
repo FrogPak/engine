@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0
+
+- The landing page shows when it was last published, in each visitor's time zone. `apps.json` has the same time as `updated`; it is not part of the state `poll` compares, so it never causes a republish by itself.
+- App cards show the date the release was published, from the forge, or from the metainfo's newest `<release>` when the forge does not say.
+- App cards show the app's license, with SPDX IDs linked to spdx.org: from the forge, then the metainfo's `<project_license>`. A new `license` app setting picks `forge` or `meta` only, or gives a license to show when neither states one. The publish warns when the sources disagree, or when the configured license differs from the one shown.
+- `apps.json` lists each app's `released`, `license` and `license_source`.
+- Every Pond republishes once after upgrading, to add the dates and licenses.
+
 ## 1.0.2
 
 - The engine reports its real version. 1.0.0 and 1.0.1 reported 0.1.0, so Ponds did not notice those upgrades until an app changed; every Pond republishes once after upgrading to 1.0.2.

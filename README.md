@@ -7,7 +7,7 @@ A FrogPak deployment is called a **Pond**: one GitHub repository that collects y
 - Signed with your own key; Flatpak verifies every download.
 - Apps come from their GitHub releases, built however you like. The optional [FrogPak releaser](https://github.com/FrogPak/releaser) builds and releases them for you.
 - Checks for new releases hourly and rebuilds only when something changed; apps can trigger an update the moment they release.
-- A landing page with install commands, your logo and colors, in light and dark mode.
+- A landing page with install commands, your logo and colors, in light and dark mode, and each app's version, release date and license.
 
 ![A Pond's landing page in light and dark mode: the command to add the remote, with System and User tabs, and one card per app with its icon, version, summary and install command](docs/images/landing-page.png)
 
