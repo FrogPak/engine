@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.1
+
+- App cards have an Install button that opens the app in the visitor's software center, through a `flatpak+https:` link to its `.flatpakref` (GNOME Software 48 and KDE Discover 6.5 or later). Its menu holds the `.flatpakref` download and the terminal command, which used to be on the card.
+- App cards link to the app's website, issue tracker and donation page when its metainfo lists them as `https:` `<url>`s of type `homepage`, `bugtracker` and `donation`. A website that is the repository is left out, since Source already links there.
+- The last-published time moved from a badge under the subtitle to the page footer, as plain text.
+- Copy buttons are icons, and select the command when the browser blocks the clipboard.
+- `apps.json` lists each app's `links`.
+- Every Pond republishes once after upgrading, to add the Install buttons and links.
+
 ## 1.1.0
 
 - The landing page shows when it was last published, in each visitor's time zone. `apps.json` has the same time as `updated`; it is not part of the state `poll` compares, so it never causes a republish by itself.

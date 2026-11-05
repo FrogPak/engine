@@ -148,6 +148,7 @@ def cmd_publish(args):
             "license": license,
             "license_source": license_source,
             "url": info.url,
+            "links": meta.links,
             "arches": sorted(r.split("/")[2] for r in refs),
         }
         entry["icon"] = site.write_app_icon(out, entry, meta)

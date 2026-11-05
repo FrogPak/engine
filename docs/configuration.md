@@ -53,7 +53,7 @@ Each key is an app ID, such as `org.example.Notes`. Under it:
 
 The Pond publishes each app's newest release that is not a pre-release. Apps that cannot be published, such as one with no release or no matching files, are skipped with a warning and the rest are published.
 
-Each app's card shows its version, the date its release was published, and its license. The page shows when it was last published, in each visitor's own time zone; a Pond only republishes when something changes, so that is when the page last changed, not when it was last checked.
+Each app's card shows its version, the date its release was published, and its license. It links to the app's repository, and to its website, bug tracker and donation page when its metainfo lists them (`<url type="homepage">`, `bugtracker` and `donation`, `https:` only); an app without one has no link for it. The page's footer shows when it was last published, in each visitor's own time zone; a Pond only republishes when something changes, so that is when the page last changed, not when it was last checked.
 
 ### Licenses
 

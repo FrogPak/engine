@@ -13,6 +13,10 @@ METAINFO = b"""<?xml version="1.0"?>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
   <name>Example</name>
+  <url type="homepage">https://example.org/app</url>
+  <url type="bugtracker">https://github.com/example/app/issues</url>
+  <url type="donation">javascript:alert(1)</url>
+  <url type="help">https://example.org/help</url>
   <summary>An example</summary>
   <releases>
     <release version="1.2.0" date="2026-11-03"/>
@@ -47,15 +51,56 @@ class PageTests(unittest.TestCase):
 
     def test_updated_badge(self):
         page = self.write([])
-        self.assertIn('Updated <time datetime="2026-11-05T21:30:00Z" data-format="datetime">'
-                      "2026-11-05 21:30 UTC</time>", page)
-        self.assertNotIn("Updated", self.write([], updated=None))
+        self.assertIn('<footer>Updated <time datetime="2026-11-05T21:30:00Z" data-format="datetime">'
+                      "2026-11-05 21:30 UTC</time> · Published with", page)
+        page = self.write([], updated=None)
+        self.assertNotIn("Updated", page)
+        self.assertIn("<footer>Published with", page)
 
     def test_card_facts(self):
         page = self.write([entry()])
         self.assertIn('Released <time datetime="2026-11-03T18:04:00Z" data-format="date">2026-11-03</time>', page)
         self.assertIn('<a href="https://spdx.org/licenses/GPL-3.0-or-later.html">GPL-3.0-or-later</a> AND '
                       '<a href="https://spdx.org/licenses/MIT.html">MIT</a>', page)
+
+    def test_install_button_and_menu(self):
+        page = self.write([entry()])
+        self.assertIn('<a class="install-main" href="flatpak+https://x.github.io/t/org.example.App.flatpakref">',
+                      page)
+        menu = page[page.index('<div class="install-menu">'):page.index("</details>")]
+        self.assertIn('<a href="org.example.App.flatpakref" download>Download .flatpakref</a>', menu)
+        self.assertIn('flatpak install<span class="scope"></span> t org.example.App</code><button', menu)
+        # The download moved into the menu; the card keeps only the Source link.
+        self.assertEqual(page.count('org.example.App.flatpakref"'), 2)
+        self.assertNotIn("Install file", page)
+
+    def test_metainfo_links(self):
+        links = {"homepage": "https://example.org/app", "bugtracker": "https://github.com/example/app/issues",
+                 "donation": "https://example.org/donate"}
+        row = self.links(self.write([entry(links=links)]))
+        self.assertEqual([label for label in ("Source", "Website", "Issue tracker", "Donate") if label in row],
+                         ["Source", "Website", "Issue tracker", "Donate"])
+        self.assertIn('<a href="https://example.org/donate" rel="noopener">Donate</a>', row)
+
+    def test_missing_links_are_left_off(self):
+        row = self.links(self.write([entry(links={})]))
+        self.assertIn("Source", row)
+        for label in ("Website", "Issue tracker", "Donate"):
+            self.assertNotIn(label, row)
+        # A homepage that is the repository would repeat Source.
+        row = self.links(self.write([entry(links={"homepage": "https://github.com/example/app/"})]))
+        self.assertNotIn("Website", row)
+        row = self.links(self.write([entry(links={"donation": "http://example.org/donate"})]))
+        self.assertNotIn("Donate", row)
+
+    def links(self, page):
+        start = page.index('<div class="links">')
+        return page[start:page.index("</div>", start)]
+
+    def test_copy_buttons_have_names(self):
+        page = self.write([entry()])
+        self.assertEqual(page.count('<span class="visually-hidden">Copy</span></button>'), 2)
+        self.assertNotIn('<button type="button">Copy</button>', page)
 
     def test_missing_facts(self):
         page = self.write([entry(released=None, license=None)])
@@ -83,6 +128,9 @@ class MetadataTests(unittest.TestCase):
         with mock.patch.object(repo, "_cat", side_effect=cat):
             meta = repo.read_metadata("r", "app/org.example.App/aarch64/stable", "org.example.App")
         self.assertEqual((meta.license, meta.released, meta.version), ("GPL-3.0-or-later", "2026-11-03", "1.2.0"))
+        # Only the shown types, and only https: the donation link here is not.
+        self.assertEqual(meta.links, {"homepage": "https://example.org/app",
+                                      "bugtracker": "https://github.com/example/app/issues"})
 
 
 class NowTests(unittest.TestCase):

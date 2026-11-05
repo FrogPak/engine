@@ -58,10 +58,9 @@ a {{ color: var(--accent); }}
   display: inline-block; font-size: .8rem; line-height: 1.4; color: var(--muted);
   border: 1px solid var(--border); border-radius: 999px; padding: .05rem .6rem;
 }}
-.updated {{ margin: 0 0 1rem; }}
 .facts {{ display: flex; flex-wrap: wrap; gap: .35rem; margin: 0 0 .75rem; }}
-.links {{ font-size: .9rem; margin-top: .6rem; }}
-.links a {{ margin-right: 1rem; }}
+.links {{ display: flex; flex-wrap: wrap; gap: .3rem 1rem; font-size: .9rem; margin-top: .6rem; }}
+.links a {{ white-space: nowrap; }}
 .cmd {{
   display: flex; align-items: flex-start; gap: .5rem; background: var(--code);
   border-radius: 8px; padding: .5rem .75rem;
@@ -71,10 +70,39 @@ a {{ color: var(--accent); }}
   font: .85rem ui-monospace, "Source Code Pro", monospace;
 }}
 .cmd button {{
-  flex: none; font: inherit; font-size: .85rem; color: var(--accent);
-  background: none; border: 1px solid var(--border); border-radius: 6px;
-  padding: .15rem .6rem; cursor: pointer;
+  flex: none; display: grid; place-items: center; width: 2rem; height: 2rem; margin: -.25rem -.4rem -.25rem 0;
+  color: var(--accent); background: none; border: none; border-radius: 6px; cursor: pointer;
 }}
+.cmd button:hover {{ background: var(--card); }}
+.cmd button svg {{ width: 1.25rem; height: 1.25rem; }}
+.cmd button .done, .cmd button.copied .copy {{ display: none; }}
+.cmd button.copied .done {{ display: block; }}
+.visually-hidden {{
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}}
+.head {{ display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }}
+.install {{ position: relative; display: flex; flex: none; }}
+.install-main, .install summary {{
+  background: var(--accent); color: var(--on-accent); cursor: pointer;
+}}
+.install-main {{
+  font-weight: 600; font-size: .95rem; text-decoration: none;
+  padding: .4rem 1.1rem; border-radius: 8px 0 0 8px;
+}}
+.install summary {{
+  list-style: none; display: grid; place-items: center; height: 100%; padding: 0 .55rem;
+  border-left: 1px solid color-mix(in srgb, var(--on-accent) 35%, transparent); border-radius: 0 8px 8px 0;
+}}
+.install summary::-webkit-details-marker {{ display: none; }}
+.install summary svg {{ width: 1rem; height: 1rem; transition: transform .15s; }}
+.install details[open] summary svg {{ transform: rotate(180deg); }}
+.install-main:hover, .install summary:hover {{ filter: brightness(.92); }}
+.install-menu {{
+  position: absolute; right: 0; top: calc(100% + .4rem); z-index: 10; width: min(21rem, calc(100vw - 2rem));
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: .75rem;
+  box-shadow: 0 8px 24px rgb(0 0 0 / .2);
+}}
+.install-menu p {{ font-size: .85rem; margin: .75rem 0 .35rem; }}
 .scope-picker {{ display: flex; }}
 .scope-picker button {{
   flex: 1; font: inherit; font-size: .9rem; padding: .35rem .9rem; cursor: pointer;
@@ -96,7 +124,6 @@ footer {{ margin-top: 3rem; font-size: .85rem; color: var(--muted); text-align: 
 {source}
 </div>
 {subtitle}
-{updated}
 
 <h2>Add the repository</h2>
 <div class="card">
@@ -104,14 +131,14 @@ footer {{ margin-top: 3rem; font-size: .85rem; color: var(--muted); text-align: 
 <button type="button" data-scope="system" aria-pressed="true">System</button>
 <button type="button" data-scope="user" aria-pressed="false">User</button>
 </div>
-<div class="cmd"><code>flatpak remote-add<span class="scope"></span> --if-not-exists {remote} {base_url}index.flatpakrepo</code><button type="button">Copy</button></div>
+<div class="cmd"><code>flatpak remote-add<span class="scope"></span> --if-not-exists {remote} {base_url}index.flatpakrepo</code>{copy}</div>
 <p class="hint" data-for="system">For everyone on this computer. May ask for your password.</p>
 <p class="hint" data-for="user" hidden>For your account only. No password needed.</p>
 </div>
 
 <h2>Apps</h2>
 {apps}
-<footer>Published with <a href="https://github.com/FrogPak/engine">FrogPak</a></footer>
+<footer>{updated}Published with <a href="https://github.com/FrogPak/engine">FrogPak</a></footer>
 </main>
 <script>
 const SCOPE_KEY = "frogpak-scope";
@@ -138,28 +165,82 @@ let savedScope = null;
 try {{ savedScope = localStorage.getItem(SCOPE_KEY); }} catch (error) {{}}
 setScope(savedScope === "user" ? "user" : "system");
 for (const button of document.querySelectorAll(".cmd button")) {{
+  const label = button.querySelector(".visually-hidden");
   button.addEventListener("click", async () => {{
-    const text = button.parentElement.querySelector("code").textContent;
-    try {{ await navigator.clipboard.writeText(text); button.textContent = "Copied"; }}
-    catch (error) {{ button.textContent = "Select and copy"; }}
-    setTimeout(() => {{ button.textContent = "Copy"; }}, 2000);
+    const code = button.parentElement.querySelector("code");
+    try {{
+      await navigator.clipboard.writeText(code.textContent);
+      button.classList.add("copied");
+      label.textContent = "Copied";
+    }} catch (error) {{
+      // No clipboard access: select the command so it can be copied by hand.
+      const range = document.createRange();
+      range.selectNodeContents(code);
+      getSelection().removeAllRanges();
+      getSelection().addRange(range);
+      label.textContent = "Selected; copy it with your keyboard";
+    }}
+    setTimeout(() => {{ button.classList.remove("copied"); label.textContent = "Copy"; }}, 2000);
   }});
 }}
+// One install menu open at a time; close it with Escape or by clicking elsewhere.
+const menus = [...document.querySelectorAll(".install details")];
+for (const menu of menus) {{
+  menu.addEventListener("toggle", () => {{
+    if (menu.open) for (const other of menus) if (other !== menu) other.open = false;
+  }});
+}}
+document.addEventListener("click", (event) => {{
+  for (const menu of menus) if (menu.open && !menu.contains(event.target)) menu.open = false;
+}});
+document.addEventListener("keydown", (event) => {{
+  if (event.key !== "Escape") return;
+  for (const menu of menus) if (menu.open) {{ menu.open = false; menu.querySelector("summary").focus(); }}
+}});
 </script>
 </body>
 </html>
 """
 
+# Two overlapping rounded squares, and a check shown once copied.
+COPY_BUTTON = (
+    '<button type="button">'
+    '<svg class="copy" viewBox="0 0 24 24" aria-hidden="true">'
+    '<path d="M15.5 6V5.5A2.5 2.5 0 0 0 13 3H5.5A2.5 2.5 0 0 0 3 5.5V13a2.5 2.5 0 0 0 2.5 2.5H6" '
+    'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'
+    '<rect x="8" y="8" width="13" height="13" rx="3" fill="currentColor"/></svg>'
+    '<svg class="done" viewBox="0 0 24 24" aria-hidden="true">'
+    '<path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="2.5" '
+    'stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    '<span class="visually-hidden">Copy</span></button>'
+)
+CHEVRON = ('<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" '
+           'stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>')
+
 APP = """<div class="card app">
 <div class="icon">{icon}</div>
 <div class="body">
+<div class="head">
 <h3>{name}{version}</h3>
+<div class="install">
+<a class="install-main" href="{open_url}">Install<span class="visually-hidden"> {name}</span></a>
+<details>
+<summary>{chevron}<span class="visually-hidden">More ways to install {name}</span></summary>
+<div class="install-menu">
+<a href="{app_id}.flatpakref" download>Download .flatpakref</a>
+<p>Or, once the repository is added, from a terminal:</p>
+<div class="cmd"><code>flatpak install<span class="scope"></span> {remote} {app_id}</code>{copy}</div>
+</div>
+</details>
+</div>
+</div>
 <p>{summary}</p>
 <div class="facts">{facts}</div>
-<div class="cmd"><code>flatpak install<span class="scope"></span> {remote} {app_id}</code><button type="button">Copy</button></div>
-<div class="links"><a href="{url}">{mark}Source</a><a href="{app_id}.flatpakref">Install file (.flatpakref)</a></div>
+<div class="links">{links}</div>
 </div>
 </div>"""
+# Card links from the metainfo, in this order; an app without one simply has no link.
+LINK_LABELS = (("homepage", "Website"), ("bugtracker", "Issue tracker"), ("donation", "Donate"))
 
 
 def _e(value):
@@ -186,6 +267,21 @@ def license_markup(expression):
     # Parentheses hug what they enclose.
     joined = " ".join(pieces).replace("( ", "(").replace(" )", ")")
     return f'<span class="badge" title="License">{joined}</span>'
+
+
+def links_markup(entry):
+    """Source, then the metainfo's links that are https. A homepage that is the repository is left out."""
+    source = _web(entry["url"])
+    links = [f'<a href="{_e(source)}">{GITHUB_MARK}Source</a>']
+    found = entry.get("links") or {}
+    for kind, label in LINK_LABELS:
+        url = found.get(kind)
+        if not url or urlparse(url).scheme != "https":
+            continue
+        if kind == "homepage" and url.rstrip("/") == source.rstrip("/"):
+            continue
+        links.append(f'<a href="{_e(url)}" rel="noopener">{label}</a>')
+    return "".join(links)
 
 
 def facts_markup(entry):
@@ -245,7 +341,9 @@ def write(site, pond, base_url, source_url, entries, logo_name, dark_name, has_s
         cards.append(APP.format(
             icon=icon, name=_e(entry["name"]), version=version,
             summary=_e(entry["summary"] or "No description yet."), facts=facts_markup(entry),
-            remote=_e(pond.remote), app_id=_e(entry["id"]), url=_e(_web(entry["url"])), mark=GITHUB_MARK
+            remote=_e(pond.remote), app_id=_e(entry["id"]), links=links_markup(entry),
+            # GNOME Software 48+ and KDE Discover 6.5+ open flatpak+https: links, as Flathub's button does.
+            open_url=_e(f"flatpak+{base_url}{entry['id']}.flatpakref"), chevron=CHEVRON, copy=COPY_BUTTON
             if "github.com" in (entry["url"] or "") else ""))
     source = f'<a href="{_e(source_url)}">{GITHUB_MARK}Source</a>' if source_url else ""
     light, dark = theme.palettes(pond.theme)
@@ -255,17 +353,16 @@ def write(site, pond, base_url, source_url, entries, logo_name, dark_name, has_s
         dark=theme.css_variables(dark),
         title=_e(pond.title),
         subtitle=f"<p>{_e(pond.subtitle)}</p>" if pond.subtitle else "",
-        updated=(f'<p class="updated"><span class="badge">Updated {time_markup(updated, "datetime")}</span></p>'
-                 if updated else ""),
+        updated=f'Updated {time_markup(updated, "datetime")} · ' if updated else "",
         favicons=favicon_links(has_svg_favicon),
         logo=logo_markup(logo_name, dark_name),
         source=source,
         remote=_e(pond.remote),
-        base_url=_e(base_url),
+        base_url=_e(base_url), copy=COPY_BUTTON,
         apps="\n".join(cards) or "<p>No apps yet.</p>",
     )
     Path(site, "index.html").write_text(page)
-    public = [{k: e.get(k) for k in ("id", "name", "summary", "version", "released", "license", "license_source",
+    public = [{k: e.get(k) for k in ("id", "name", "summary", "version", "released", "license", "license_source", "links",
                                      "url", "icon", "arches")}
               for e in entries]
     Path(site, STATE_FILE).write_text(json.dumps({"frogpak": 1, "updated": updated, "apps": public, "state": state},

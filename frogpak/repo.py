@@ -4,8 +4,9 @@ import os
 import shutil
 import subprocess
 import xml.etree.ElementTree as ET
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+from urllib.parse import urlparse
 
 from . import log
 from .sources.base import iso_time
@@ -41,8 +42,24 @@ class Metadata:
     released: str | None = None
     # <project_license>, the license of the app itself; <metadata_license> covers only the file.
     license: str | None = None
+    # https links from <url type="...">, by type: see LINK_TYPES.
+    links: dict = field(default_factory=dict)
     icon: bytes | None = None
     icon_ext: str | None = None
+
+
+# The <url> types shown on an app's card. Others are ignored.
+LINK_TYPES = ("homepage", "bugtracker", "donation")
+
+
+def _links(root):
+    """https links only: the metainfo comes from a bundle, so nothing else is trusted."""
+    links = {}
+    for element in root.findall("url"):
+        kind, url = element.get("type"), (element.text or "").strip()
+        if kind in LINK_TYPES and kind not in links and urlparse(url).scheme == "https" and urlparse(url).netloc:
+            links[kind] = url
+    return links
 
 
 def run(*args, binary=False, check=True):
@@ -143,6 +160,7 @@ def read_metadata(repo, ref, app_id):
         meta.name = _text(_untranslated(root, "name"))
         meta.summary = _text(_untranslated(root, "summary"))
         meta.license = _text(root.find("project_license")) or None
+        meta.links = _links(root)
         # AppStream lists releases newest first.
         release = root.find("./releases/release")
         if release is not None:
