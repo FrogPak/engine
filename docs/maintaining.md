@@ -2,6 +2,17 @@
 
 For maintainers of FrogPak/engine and FrogPak/releaser. Both are released the same way.
 
+## Running it locally
+
+Ponds need none of this; the publish workflow installs it on GitHub's runner. To run the engine yourself, you need Python 3.10 or newer with PyYAML, plus `flatpak`, `ostree`, `gpg` and `rsvg-convert`. On Debian and Ubuntu:
+
+```
+sudo apt-get install flatpak ostree gnupg librsvg2-bin python3-yaml
+```
+
+- Tests: `python3 -m unittest discover -s tests -t .`
+- A full publish offline, from a folder of bundles: `python3 tests/local_publish.py BUNDLE_DIR POND_DIR OUTPUT_DIR WORK_DIR`
+
 ## Versions
 
 Releases follow semantic versioning. Ponds and apps call `@v1`, a tag that moves to each `1.x.y` release, so only a breaking change gets a new major tag.
