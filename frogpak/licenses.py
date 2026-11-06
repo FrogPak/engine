@@ -6,7 +6,7 @@ from . import log
 
 # license: values that pick a source rather than naming a license.
 KEYWORDS = {"auto": "auto", "forge": "forge", "repo": "forge", "meta": "meta", "metainfo": "meta"}
-SOURCE_NAMES = {"forge": "forge", "meta": "metainfo", "config": "frogpak.yml"}
+SOURCE_NAMES = {"forge": "forge", "meta": "metainfo"}
 # What forges report when a repository has a license they cannot identify.
 UNKNOWN = {"NOASSERTION", "NONE", "OTHER"}
 OPERATORS = {"AND", "OR", "WITH"}
@@ -72,11 +72,12 @@ def equivalent(a, b):
     return True
 
 
-def resolve(app_id, value, forge, meta):
+def resolve(app_id, value, forge, meta, config_name="pond.yml"):
     """(license, source) for one app, where source is forge, meta or config.
 
     auto: the forge, then the metainfo. forge or meta: only that one. A license
-    written in frogpak.yml is the last fallback, after both.
+    written in the Pond configuration is the last fallback, after both.
+    config_name names that file in warnings.
     """
     mode = setting(value)
     forge, meta = clean(forge), clean(meta)
@@ -99,7 +100,7 @@ def resolve(app_id, value, forge, meta):
     if mode != "auto":
         configured = clean(mode)
         if winner and configured and not equivalent(configured, winner):
-            log.warning(f"{app_id}: license: {configured} in frogpak.yml differs from {winner} "
+            log.warning(f"{app_id}: license: {configured} in {config_name} differs from {winner} "
                         f"from the {SOURCE_NAMES[source]}; showing {winner}")
         if not winner:
             return configured, "config"

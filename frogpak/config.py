@@ -1,10 +1,16 @@
-"""Loads and validates a Pond's frogpak.yml."""
+"""Loads and validates a Pond's pond.yml."""
 import re
 import string
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
+
+from . import log
+
+CONFIG_NAME = "pond.yml"
+# The configuration's name before 1.1.2, still read when there is no pond.yml.
+OLD_CONFIG_NAME = "frogpak.yml"
 
 DEFAULT_ARCHES = ("x86_64", "aarch64")
 DEFAULT_ASSETS = "{app_id}-{arch}.flatpak"
@@ -144,7 +150,7 @@ def _raw_theme(text):
             if isinstance(k, yaml.ScalarNode) and isinstance(v, yaml.ScalarNode) and v.value != ""}
 
 
-def parse(text, path="frogpak.yml"):
+def parse(text, path=CONFIG_NAME):
     problems = []
     try:
         data = yaml.load(text, Loader=_UniqueKeyLoader)
@@ -246,6 +252,26 @@ def parse(text, path="frogpak.yml"):
               logo=images["logo"], logo_dark=images["logo-dark"], favicon=images["favicon"],
               theme=theme, css=images["css"])
     return Config(pond=pond, apps=tuple(apps), path=Path(path))
+
+
+def find(path=None, root=".", warn=True):
+    """The configuration file: path as given; otherwise pond.yml in root, or the older
+    frogpak.yml when there is no pond.yml. warn=False keeps a second command in the same
+    run from repeating the warnings."""
+    if path:
+        return Path(path)
+    new, old = Path(root) / CONFIG_NAME, Path(root) / OLD_CONFIG_NAME
+    if new.is_file():
+        if old.is_file() and warn:
+            log.warning(f"{OLD_CONFIG_NAME} is ignored because {CONFIG_NAME} exists. Move any settings you "
+                        f"still need into {CONFIG_NAME}, then delete {OLD_CONFIG_NAME}.")
+        return new
+    if old.is_file():
+        if warn:
+            log.warning(f"{OLD_CONFIG_NAME} is the old name for the Pond configuration; rename it to "
+                        f"{CONFIG_NAME}. {OLD_CONFIG_NAME} works until FrogPak 2.0.")
+        return old
+    return new
 
 
 def load(path):

@@ -35,8 +35,8 @@ def _now():
 
 
 def cmd_check(args):
-    cfg = config.load(args.config)
-    log.info(f"{args.config}: OK, {len(cfg.apps)} app(s)")
+    cfg = config.load(config.find(args.config))
+    log.info(f"{cfg.path}: OK, {len(cfg.apps)} app(s)")
     for app in cfg.apps:
         try:
             sources.resolve(app.repo, app.forge)
@@ -46,7 +46,8 @@ def cmd_check(args):
 
 
 def cmd_poll(args):
-    cfg = config.load(args.config)
+    # check runs first in the same job and has already warned about the file's name.
+    cfg = config.load(config.find(args.config, warn=False))
     current = _normalize(fetch.fingerprint(cfg, fetch.survey(cfg), __version__))
     url = _base_url(args.base_url) + site.STATE_FILE
     try:
@@ -96,7 +97,7 @@ def size_guard(out, bundles):
 
 
 def cmd_publish(args):
-    cfg = config.load(args.config)
+    cfg = config.load(config.find(args.config, args.pond_dir))
     pond = cfg.pond
     base_url = _base_url(args.base_url)
     out = Path(args.output)
@@ -138,7 +139,8 @@ def cmd_publish(args):
         except (sources.SourceError, http.NetworkError) as error:
             log.warning(f"{state.app.id}: {error}")
             info = sources.RepoInfo(url=state.source.web, description="")
-        license, license_source = licenses.resolve(state.app.id, state.app.license, info.license, meta.license)
+        license, license_source = licenses.resolve(state.app.id, state.app.license, info.license, meta.license,
+                                                   cfg.path.name)
         entry = {
             "id": state.app.id,
             "name": meta.name or state.app.name,
@@ -181,15 +183,17 @@ def main(argv=None):
     parser.add_argument("--version", action="version", version=f"FrogPak {__version__}")
     commands = parser.add_subparsers(dest="command", required=True)
 
-    check = commands.add_parser("check", help="validate frogpak.yml")
-    check.add_argument("--config", default="frogpak.yml")
+    # Without --config: pond.yml, or the older frogpak.yml when there is no pond.yml.
+    config_help = "the Pond configuration (default: pond.yml, or frogpak.yml)"
+    check = commands.add_parser("check", help="validate the Pond configuration")
+    check.add_argument("--config", help=config_help)
 
     poll = commands.add_parser("poll", help="report whether the published Pond is out of date")
-    poll.add_argument("--config", default="frogpak.yml")
+    poll.add_argument("--config", help=config_help)
     poll.add_argument("--base-url", required=True)
 
     publish = commands.add_parser("publish", help="build the signed repository and site")
-    publish.add_argument("--config", default="frogpak.yml")
+    publish.add_argument("--config", help=config_help)
     publish.add_argument("--base-url", required=True)
     publish.add_argument("--pond-dir", default=".")
     publish.add_argument("--source-url", default="")

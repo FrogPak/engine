@@ -10,7 +10,7 @@ The Pond's workflow passes its signing key to the engine's code, which runs insi
 To pin, replace `@v1` in `.github/workflows/publish.yml` with the full commit SHA of an engine release, followed by its version as a comment so Dependabot can tell which release it is:
 
 ```yaml
-    uses: FrogPak/engine/.github/workflows/pond.yml@<full commit SHA> # v1.2.0
+    uses: FrogPak/engine/.github/workflows/publish-pond.yml@<full commit SHA> # v1.2.0
 ```
 
 Then let Dependabot propose updates by adding `.github/dependabot.yml`:
@@ -50,4 +50,4 @@ Adding a Pond's remote trusts its key for the apps it serves. Flatpak's sandbox 
 - Logos fetched from URLs, and app icons from bundles, are published as PNG images, so third-party SVG content is never served from your Pond's address.
 - Addresses from a forge's API are used only if they are `http` or `https`, and text such as repository descriptions is kept to one line in the `.flatpakref` files.
 - Zips are read without using the names inside them as paths, so a zip cannot write files outside its working folder, and extraction stops at fixed size limits.
-- Bundles are imported into a separate staging repository first and checked against the app ID and architecture in `frogpak.yml`, so a mislabeled bundle cannot replace another app.
+- Bundles are imported into a separate staging repository first and checked against the app ID and architecture in `pond.yml`, so a mislabeled bundle cannot replace another app.

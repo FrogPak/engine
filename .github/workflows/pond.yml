@@ -1,192 +1,32 @@
-# Publishes a FrogPak Pond: checks each app's latest release, rebuilds the signed
-# Flatpak repository and landing page when anything changed, and deploys them
-# to GitHub Pages.
+# This workflow was renamed to publish-pond.yml in 1.1.2. It only fails with a
+# notice, so Ponds still calling it learn what to change.
 #
-# Called from the Pond repository's own workflow, which supplies the triggers,
-# the permissions and the signing key. The Pond template has that workflow.
-#
-# Caller requirements:
-#   - permissions: contents write (keep-alive commit), actions write (re-enabling
-#     the schedule), pages write and id-token write (deployment, and locating
-#     this engine's own code).
-#   - secret GPG_PRIVATE_KEY: the armored private signing key.
-#   - Settings > Pages > Source set to "GitHub Actions".
+# It accepts the same inputs and secret as publish-pond.yml; otherwise GitHub
+# would reject the call before the notice could be shown.
 
-name: FrogPak Pond
+name: FrogPak Pond (renamed)
 
 on:
   workflow_call:
     inputs:
       config:
-        description: Path of the Pond configuration file.
         type: string
-        default: frogpak.yml
+        default: ''
       force:
-        description: Rebuild even when nothing changed.
         type: boolean
         default: false
     secrets:
       GPG_PRIVATE_KEY:
-        required: true
+        required: false
+
+permissions: {}
 
 jobs:
-  check:
+  renamed:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      actions: write
-      pages: read
-      id-token: write
-    outputs:
-      changed: ${{ steps.poll.outputs.changed }}
-      ready: ${{ steps.setup.outputs.ready }}
-      base-url: ${{ steps.pages.outputs.base_url }}
-      engine-repository: ${{ steps.engine.outputs.repository }}
-      engine-sha: ${{ steps.engine.outputs.sha }}
+    permissions: {}
     steps:
-      - uses: actions/checkout@v7
-
-      - name: Locate engine
-        # github.workflow_sha names the caller's commit in a called workflow; the
-        # OIDC token's job_workflow_sha is the only source for this file's commit.
-        id: engine
+      - name: Update your workflow
         run: |
-          python3 - <<'PY' >> "$GITHUB_OUTPUT"
-          import base64, json, os, urllib.request
-          request = urllib.request.Request(
-              os.environ["ACTIONS_ID_TOKEN_REQUEST_URL"] + "&audience=frogpak",
-              headers={"Authorization": "Bearer " + os.environ["ACTIONS_ID_TOKEN_REQUEST_TOKEN"]})
-          token = json.load(urllib.request.urlopen(request))["value"]
-          payload = token.split(".")[1]
-          claims = json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))
-          print("repository=" + claims["job_workflow_ref"].split("/.github/")[0])
-          print("sha=" + claims["job_workflow_sha"])
-          PY
-
-      - uses: actions/checkout@v7
-        with:
-          repository: ${{ steps.engine.outputs.repository }}
-          ref: ${{ steps.engine.outputs.sha }}
-          path: .frogpak-engine
-
-      - name: Keep schedule active
-        # GitHub disables schedules in public repositories after 60 days without
-        # activity and does not define activity; a commit is known to count.
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-          WORKFLOW_REF: ${{ github.workflow_ref }}
-        run: |
-          file=${WORKFLOW_REF%@*}
-          gh api -X PUT "repos/$GITHUB_REPOSITORY/actions/workflows/${file##*/}/enable" --silent || true
-          age=$(( $(date +%s) - $(git log -1 --format=%ct) ))
-          if (( age > 50 * 86400 )); then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit --allow-empty -m "Keep scheduled publishing active"
-            git push
-          fi
-
-      - id: pages
-        uses: actions/configure-pages@v6
-        continue-on-error: true
-
-      - name: Check setup
-        # Scheduled runs only warn, so a Pond still being set up does not fail every hour.
-        id: setup
-        env:
-          PAGES: ${{ steps.pages.outcome }}
-          HAS_KEY: ${{ secrets.GPG_PRIVATE_KEY != '' }}
-          DOCS: https://github.com/FrogPak/engine/blob/main/docs/setup.md
-        run: |
-          missing=()
-          [[ "$PAGES" == success ]] || missing+=("Settings > Pages > Source must be GitHub Actions ($DOCS#github-pages)")
-          [[ "$HAS_KEY" == true ]] || missing+=("the GPG_PRIVATE_KEY secret is missing ($DOCS#signing-key)")
-          if (( ${#missing[@]} == 0 )); then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          level=error
-          [[ "$GITHUB_EVENT_NAME" == schedule ]] && level=warning
-          for item in "${missing[@]}"; do echo "::$level::Pond not set up: $item"; done
-          echo "ready=false" >> "$GITHUB_OUTPUT"
-          [[ "$level" == warning ]]
-
-      - name: Validate configuration
-        env:
-          CONFIG: ${{ inputs.config }}
-        run: |
-          python3 -c 'import yaml' 2>/dev/null || { sudo apt-get update -q && sudo apt-get install -y -q python3-yaml; }
-          PYTHONPATH=.frogpak-engine python3 -m frogpak check --config "$CONFIG"
-
-      - name: Check for changes
-        if: steps.setup.outputs.ready == 'true'
-        id: poll
-        env:
-          CONFIG: ${{ inputs.config }}
-          BASE_URL: ${{ steps.pages.outputs.base_url }}
-          GITHUB_TOKEN: ${{ github.token }}
-        run: PYTHONPATH=.frogpak-engine python3 -m frogpak poll --config "$CONFIG" --base-url "$BASE_URL"
-
-  publish:
-    needs: check
-    if: >-
-      needs.check.outputs.ready == 'true' &&
-      (needs.check.outputs.changed == 'true' || inputs.force || github.event_name == 'push')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    concurrency:
-      group: frogpak-publish
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/checkout@v7
-        with:
-          repository: ${{ needs.check.outputs.engine-repository }}
-          ref: ${{ needs.check.outputs.engine-sha }}
-          path: .frogpak-engine
-
-      - name: Install tooling
-        run: sudo apt-get update && sudo apt-get install -y flatpak ostree gnupg librsvg2-bin python3-yaml
-
-      - name: Import signing key
-        env:
-          SIGNING_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-        run: |
-          export GNUPGHOME="$RUNNER_TEMP/gnupg"
-          install -d -m 700 "$GNUPGHOME"
-          if [[ -n "$SIGNING_KEY" ]]; then
-            gpg --batch --import <<< "$SIGNING_KEY"
-          fi
-          echo "GNUPGHOME=$GNUPGHOME" >> "$GITHUB_ENV"
-
-      - name: Build repository and site
-        env:
-          CONFIG: ${{ inputs.config }}
-          BASE_URL: ${{ needs.check.outputs.base-url }}
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          PYTHONPATH=.frogpak-engine python3 -m frogpak publish --config "$CONFIG" --base-url "$BASE_URL" \
-            --source-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
-            --output "$RUNNER_TEMP/site" --work "$RUNNER_TEMP/work"
-          rm -rf "$RUNNER_TEMP/site/tmp"
-
-      - uses: actions/upload-pages-artifact@v5
-        with:
-          path: ${{ runner.temp }}/site
-
-  deploy:
-    needs: publish
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    concurrency:
-      group: frogpak-deploy
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v5
+          echo "::error title=FrogPak workflow renamed::FrogPak's pond.yml is now publish-pond.yml. In .github/workflows/publish.yml, change FrogPak/engine/.github/workflows/pond.yml@v1 to FrogPak/engine/.github/workflows/publish-pond.yml@v1. Nothing was published; your site is unchanged."
+          exit 1

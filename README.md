@@ -26,7 +26,7 @@ Use the [Pond template](https://github.com/FrogPak/pond-template), then follow [
 
 ## This repository
 
-- `.github/workflows/pond.yml`: the reusable workflow Ponds call.
+- `.github/workflows/publish-pond.yml`: the reusable workflow Ponds call. `pond.yml` is its old name, kept only to fail with a notice to update.
 - `frogpak/`: the engine (`python3 -m frogpak check | poll | publish`). `frogpak/sources/` has one module per forge, and nothing outside it may assume a forge.
 - `tests/`: unit tests (`python3 -m unittest discover -s tests -t .`) and `local_publish.py`, which runs a full publish offline from a folder of bundles.
 

@@ -10,7 +10,7 @@ Set it as described in [GitHub Pages](setup.md#github-pages). On scheduled runs 
 **"Pond not set up: the GPG_PRIVATE_KEY secret is missing"** or **"No signing key found"**
 Add the secret as described in [Signing key](setup.md#signing-key). Check the name is exactly `GPG_PRIVATE_KEY` and that the value includes the `BEGIN` and `END` lines.
 
-**"frogpak.yml has N problem(s)"**
+**"pond.yml has N problem(s)"**
 The log lists each one. The common ones:
 
 - *unknown key*: a misspelt or misplaced key; the message lists the allowed ones.
@@ -35,7 +35,7 @@ The log has a warning for every skipped app:
 The log warns when the sources disagree:
 
 - *the forge reports license A, but the metainfo says B*: the repository's LICENSE file and the app's metainfo name different licenses. The forge's is shown. If the metainfo is right, set `license: meta` for the app, and consider telling its developer.
-- *license: A in frogpak.yml differs from B*: a license in `frogpak.yml` is only used when neither source states one. Remove it, or ask the app's developer to correct the source that is wrong.
+- *license: A in pond.yml differs from B*: a license in `pond.yml` is only used when neither source states one. Remove it, or ask the app's developer to correct the source that is wrong.
 - *license is set to forge (or meta), but … states no license*: that source has nothing; use `auto` to fall back to the other.
 
 ## The page didn't update

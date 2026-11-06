@@ -34,7 +34,7 @@ If the key is ever lost, create a new one and replace the secret. Everyone who a
 
 ## Configure the Pond
 
-Edit `frogpak.yml` in the repository. The minimum is a title, a remote name and your apps:
+Edit `pond.yml` in the repository. The minimum is a title, a remote name and your apps:
 
 ```yaml
 pond:
@@ -57,7 +57,7 @@ If something is missing, the run stops with a message naming it; [Troubleshootin
 ## What happens next
 
 - Every hour, the Pond checks each app's latest release and rebuilds only when something changed.
-- A push to the repository, such as an edit to `frogpak.yml`, rebuilds at once.
+- A push to the repository, such as an edit to `pond.yml`, rebuilds at once.
 - **Run workflow** with **Rebuild even if nothing changed** forces a rebuild.
 - Apps can trigger the Pond the moment they release; see [Feeding a Pond](apps.md#triggering-a-pond).
 - GitHub stops scheduled workflows in repositories with no activity for 60 days. The Pond keeps itself active, and if the repository has had no commit for 50 days it makes an empty commit to stay that way.

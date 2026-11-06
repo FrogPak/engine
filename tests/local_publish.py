@@ -39,7 +39,8 @@ def main():
     sources.resolve = lambda repo, forge=None: LocalSource(repo, bundle_dir)
     cli.sources.resolve = sources.resolve
     cli.fetch.sources.resolve = sources.resolve
-    return cli.main(["publish", "--config", str(Path(pond_dir) / "frogpak.yml"), "--pond-dir", pond_dir,
+    # No --config: like a Pond, the folder may hold pond.yml or the older frogpak.yml.
+    return cli.main(["publish", "--pond-dir", pond_dir,
                      "--base-url", "http://localhost:8765/", "--source-url", "https://example.org/pond",
                      "--output", output, "--work", work])
 

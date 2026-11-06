@@ -1,6 +1,8 @@
 # Configuration reference
 
-A Pond is configured by `frogpak.yml` at the root of its repository. Unknown or misspelt keys are errors, and every problem in the file is reported at once.
+A Pond is configured by `pond.yml` at the root of its repository. Unknown or misspelt keys are errors, and every problem in the file is reported at once.
+
+Before 1.1.2 the file was called `frogpak.yml`. A Pond with only `frogpak.yml` still works, with a warning in each run until it is renamed; if both files exist, `pond.yml` is used and `frogpak.yml` is ignored, with a warning. `frogpak.yml` is read until FrogPak 2.0. To use another file, set the workflow's `config` input.
 
 ```yaml
 pond:
@@ -57,7 +59,7 @@ Each app's card shows its version, the date its release was published, and its l
 
 ### Licenses
 
-The license on a card comes from the app's own sources first. The Pond's maintainer is not necessarily the app's author, so a license written in `frogpak.yml` is only the last fallback.
+The license on a card comes from the app's own sources first. The Pond's maintainer is not necessarily the app's author, so a license written in `pond.yml` is only the last fallback.
 
 | `license` | Card shows |
 | --- | --- |
@@ -69,7 +71,7 @@ The license on a card comes from the app's own sources first. The Pond's maintai
 - GitHub detects the license from the repository's LICENSE file. Codeberg and Gitea report it on newer versions; when one detects several license files, they are not used, since they do not say whether both apply.
 - A forge that cannot identify the license, such as GitHub's `NOASSERTION`, counts as stating none.
 - When the forge and the metainfo name the same license and the metainfo is more precise, the metainfo's is shown. Forges report GNU licenses as `GPL-3.0`, since a LICENSE file does not say whether `-only` or `-or-later` was meant.
-- The publish warns when the forge and the metainfo disagree, and when a license in `frogpak.yml` differs from the one shown. `forge` or `meta` settles a disagreement without a warning.
+- The publish warns when the forge and the metainfo disagree, and when a license in `pond.yml` differs from the one shown. `forge` or `meta` settles a disagreement without a warning.
 - With no license from any source, the card says *License not stated*.
 - SPDX IDs on the card link to their pages on spdx.org.
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.2
+
+- The reusable workflow is renamed from `pond.yml` to `publish-pond.yml`. In your Pond's `.github/workflows/publish.yml`, change `FrogPak/engine/.github/workflows/pond.yml@v1` to `FrogPak/engine/.github/workflows/publish-pond.yml@v1`. A Pond still calling `pond.yml` fails with a notice saying so, and publishes nothing until it is updated; its site stays as it was.
+- The Pond configuration is now `pond.yml`, the name the workflow used to have. A Pond with only `frogpak.yml` keeps working, with a warning to rename it; when both exist, `pond.yml` is used and the publish warns that `frogpak.yml` is ignored. `frogpak.yml` is read until 2.0. The workflow's `config` input now defaults to finding the file; a Pond that sets it gets exactly that file.
+
 ## 1.1.1
 
 - App cards have an Install button that opens the app in the visitor's software center, through a `flatpak+https:` link to its `.flatpakref` (GNOME Software 48 and KDE Discover 6.5 or later). Its menu holds the `.flatpakref` download and the terminal command, which used to be on the card.
