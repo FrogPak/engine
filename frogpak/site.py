@@ -19,6 +19,7 @@ PAGE = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title}</title>
+{social}
 {favicons}
 <style>
 :root {{ {light} }}
@@ -310,6 +311,24 @@ def write_app_icon(site, entry, meta):
     return name
 
 
+def social_tags(pond, base_url, social_name):
+    """Open Graph and Twitter tags, so a shared link shows a card. Without a social image
+    the card uses the Pond's icon, which apps show small beside the text."""
+    image = base_url + (social_name or images.ICON)
+    tags = [
+        ("property", "og:type", "website"),
+        ("property", "og:site_name", pond.title),
+        ("property", "og:title", pond.title),
+        ("property", "og:url", base_url),
+        ("property", "og:image", image),
+        ("property", "og:image:alt", pond.title),
+        ("name", "twitter:card", "summary_large_image" if social_name else "summary"),
+    ]
+    if pond.subtitle:
+        tags[3:3] = [("name", "description", pond.subtitle), ("property", "og:description", pond.subtitle)]
+    return "\n".join(f'<meta {kind}="{key}" content="{_e(value)}">' for kind, key, value in tags)
+
+
 def favicon_links(has_svg):
     links = []
     if has_svg:
@@ -328,10 +347,11 @@ def logo_markup(logo_name, dark_name):
 
 
 def write(site, pond, base_url, source_url, entries, logo_name, dark_name, has_svg_favicon, state,
-          custom_css=False, updated=None):
+          custom_css=False, updated=None, social_name=None):
     """entries: dicts with id, name, summary, version, released, license, url, icon.
 
     updated is the publish time, shown on the page; it is not part of state.
+    social_name is the shared-link image in the site, or None to offer the icon.
     """
     cards = []
     for entry in entries:
@@ -355,6 +375,7 @@ def write(site, pond, base_url, source_url, entries, logo_name, dark_name, has_s
         subtitle=f"<p>{_e(pond.subtitle)}</p>" if pond.subtitle else "",
         updated=f'Updated {time_markup(updated, "datetime")} · ' if updated else "",
         favicons=favicon_links(has_svg_favicon),
+        social=social_tags(pond, base_url, social_name),
         logo=logo_markup(logo_name, dark_name),
         source=source,
         remote=_e(pond.remote),

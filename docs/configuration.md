@@ -39,6 +39,7 @@ apps:
 | `favicon` | no | Square image for the browser tab and the remote's icon |
 | `theme` | no | Colors; see [Theme](#theme) |
 | `css` | no | Your own stylesheet, a repository path or `https://` URL, loaded after FrogPak's styles |
+| `social-image` | no | Image shown when the page's link is shared; default: the repository's social preview image. See [Shared links](#shared-links) |
 
 YAML guesses types for unquoted text: `no` becomes false and `1.10` becomes the number 1.1. FrogPak reports these instead of guessing along; put such values in quotes.
 
@@ -139,3 +140,13 @@ All four are optional hex colors, 3 or 6 digits. Write them without `#`, or with
 - Without `logo`, FrogPak looks for `logo.svg`, then `logo.png`, at the repository root, and likewise `logo-dark.svg` and `logo-dark.png`. With neither, the FrogPak logo is used.
 - Wide logos are fine on the page; they are scaled, never stretched. The favicon is made from the logo unless `favicon` is set, so a wide logo produces a warning suggesting a square `favicon`.
 - URLs are fetched at every publish. If one cannot be fetched, the publish continues with the default and a warning. SVGs from URLs are published as PNG images.
+
+## Shared links
+
+When someone shares the page's link in a chat app or on social media, the app shows a card with the Pond's title, subtitle and an image:
+
+1. `social-image`, if set: a PNG or JPEG, as a repository path or `https://` URL, up to 2 MB.
+2. Otherwise, on GitHub, the image uploaded under the repository's **Settings > General > Social preview**. GitHub's generated card is not used, since it describes the repository rather than the Pond.
+3. Otherwise the Pond's icon, which apps show as a small thumbnail beside the text.
+
+The image is copied into the site, so the card does not depend on GitHub's copy. Uploading a new social preview image, or changing the `social-image` file, republishes the page at the next hourly check. Apps keep their own copy of a card for a while, so an old card can take time to change. 1280 × 640 pixels suits most apps.

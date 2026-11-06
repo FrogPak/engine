@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.3
+
+- Shared links to a Pond's page show a card: the page has Open Graph and Twitter tags with the Pond's title, subtitle and an image. The image is the new `social-image` setting, or else the repository's uploaded social preview image, or else the Pond's icon. A new image republishes the page at the next hourly check.
+
 ## 1.1.2
 
 - The reusable workflow is renamed from `pond.yml` to `publish-pond.yml`. In your Pond's `.github/workflows/publish.yml`, change `FrogPak/engine/.github/workflows/pond.yml@v1` to `FrogPak/engine/.github/workflows/publish-pond.yml@v1`. A Pond still calling `pond.yml` fails with a notice saying so, and publishes nothing until it is updated; its site stays as it was.

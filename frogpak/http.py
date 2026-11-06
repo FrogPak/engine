@@ -20,8 +20,8 @@ class NetworkError(Exception):
     """Failure that retrying might fix: connection problems and server errors."""
 
 
-def _open(url, headers=None, timeout=60):
-    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, **(headers or {})})
+def _open(url, headers=None, timeout=60, data=None):
+    request = urllib.request.Request(url, data=data, headers={"User-Agent": USER_AGENT, **(headers or {})})
     delay = 2
     for attempt in range(ATTEMPTS):
         try:
@@ -40,6 +40,13 @@ def _open(url, headers=None, timeout=60):
 
 def get_json(url, headers=None):
     with _open(url, headers) as response:
+        return json.load(response)
+
+
+def post_json(url, payload, headers=None):
+    """POSTs payload as JSON and returns the JSON reply; for read-only queries, which are safe to retry."""
+    body = json.dumps(payload).encode()
+    with _open(url, {"Content-Type": "application/json", **(headers or {})}, data=body) as response:
         return json.load(response)
 
 

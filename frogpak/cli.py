@@ -8,7 +8,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import __version__, config, fetch, http, images, licenses, log, repo, site, sources
+from . import __version__, config, fetch, http, images, licenses, log, repo, site, social, sources
 
 
 def _base_url(value):
@@ -48,7 +48,9 @@ def cmd_check(args):
 def cmd_poll(args):
     # check runs first in the same job and has already warned about the file's name.
     cfg = config.load(config.find(args.config, warn=False))
-    current = _normalize(fetch.fingerprint(cfg, fetch.survey(cfg), __version__))
+    # Quiet: publish warns if the image cannot be looked up, and poll runs every hour.
+    image = social.identity(social.source(cfg.pond, warn=False), ".")
+    current = _normalize(fetch.fingerprint(cfg, fetch.survey(cfg), __version__, image))
     url = _base_url(args.base_url) + site.STATE_FILE
     try:
         # The query string sidesteps the Pages CDN cache, which holds files for ten minutes.
@@ -165,11 +167,14 @@ def cmd_publish(args):
             (out / "custom.css").write_bytes(loaded[0])
             custom_css = True
 
-    fingerprint = fetch.fingerprint(cfg, states, __version__)
+    image_source = social.source(pond)
+    social_name = social.write(out, image_source, args.pond_dir)
+
+    fingerprint = fetch.fingerprint(cfg, states, __version__, social.identity(image_source, args.pond_dir))
     # The publish time is shown on the page but kept out of the fingerprint, so it never
     # makes a Pond look out of date by itself.
     site.write(out, pond, base_url, args.source_url, entries, logo_name, dark_name, has_svg, fingerprint,
-               custom_css, updated=_now())
+               custom_css, updated=_now(), social_name=social_name)
     if not size_guard(out, bundles):
         return 1
     log.info(f"Published {len(entries)} of {len(cfg.apps)} app(s) to {out}")

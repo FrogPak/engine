@@ -17,7 +17,8 @@ DEFAULT_ASSETS = "{app_id}-{arch}.flatpak"
 FORGES = ("github", "forgejo", "gitea", "gitlab")
 PLACEHOLDERS = {"app_id", "name", "arch"}
 
-POND_KEYS = {"title", "subtitle", "remote", "arches", "logo", "logo-dark", "favicon", "theme", "css"}
+POND_KEYS = {"title", "subtitle", "remote", "arches", "logo", "logo-dark", "favicon", "theme", "css",
+             "social-image"}
 THEME_KEYS = ("accent", "accent-dark", "background", "background-dark")
 APP_KEYS = {"repo", "assets", "forge", "license"}
 LICENSE_KEYWORDS = ("auto", "forge", "repo", "meta", "metainfo")
@@ -65,6 +66,8 @@ class Pond:
     favicon: str | None = None
     theme: dict = field(default_factory=dict)
     css: str | None = None
+    # The image for shared links; None uses the repository's social preview image.
+    social_image: str | None = None
 
 
 @dataclass(frozen=True)
@@ -185,7 +188,7 @@ def parse(text, path=CONFIG_NAME):
             clean_arches.append(arch)
 
     images = {}
-    for key in ("logo", "logo-dark", "favicon", "css"):
+    for key in ("logo", "logo-dark", "favicon", "css", "social-image"):
         images[key] = _string(pond_data.get(key), f"pond.{key}", problems)
 
     theme = {}
@@ -250,7 +253,7 @@ def parse(text, path=CONFIG_NAME):
         raise ConfigError(path, problems)
     pond = Pond(title=title, remote=remote, subtitle=subtitle, arches=tuple(clean_arches),
               logo=images["logo"], logo_dark=images["logo-dark"], favicon=images["favicon"],
-              theme=theme, css=images["css"])
+              theme=theme, css=images["css"], social_image=images["social-image"])
     return Config(pond=pond, apps=tuple(apps), path=Path(path))
 
 
