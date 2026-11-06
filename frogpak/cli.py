@@ -47,7 +47,7 @@ def cmd_check(args):
 
 def cmd_poll(args):
     # check runs first in the same job and has already warned about the file's name.
-    cfg = config.load(config.find(args.config, warn=False))
+    cfg = config.load(config.find(args.config, warn=False), warn=False)
     # Quiet: publish warns if the image cannot be looked up, and poll runs every hour.
     image = social.identity(social.source(cfg.pond, warn=False), ".")
     current = _normalize(fetch.fingerprint(cfg, fetch.survey(cfg), __version__, image,
@@ -67,7 +67,7 @@ def cmd_poll(args):
         for app_id in sorted(set(current["apps"]) | set(published.get("apps", {}))):
             if current["apps"].get(app_id) != published.get("apps", {}).get(app_id):
                 log.info(f"Changed: {app_id}")
-        for key in ("engine", "config"):
+        for key in ("engine", "config", "includes"):
             if current.get(key) != published.get(key):
                 log.info(f"Changed: {key}")
     _output("changed", "true" if changed else "false")
@@ -143,7 +143,7 @@ def cmd_publish(args):
             log.warning(f"{state.app.id}: {error}")
             info = sources.RepoInfo(url=state.source.web, description="")
         license, license_source = licenses.resolve(state.app.id, state.app.license, info.license, meta.license,
-                                                   cfg.path.name)
+                                                   state.app.source or cfg.path.name)
         entry = {
             "id": state.app.id,
             "name": meta.name or state.app.name,

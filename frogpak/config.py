@@ -1,4 +1,5 @@
 """Loads and validates a Pond's pond.yml."""
+import hashlib
 import re
 import string
 from dataclasses import dataclass, field
@@ -21,7 +22,9 @@ POND_KEYS = {"title", "subtitle", "remote", "arches", "logo", "logo-dark", "favi
              "social-image", "order"}
 # How the landing page lists apps; the first is the default.
 ORDERS = ("listed", "name", "newest", "app-id")
-THEME_KEYS = ("accent", "accent-dark", "background", "background-dark")
+THEME_KEYS = ("mode", "accent", "accent-dark", "background", "background-dark")
+# pond.theme.mode: the landing page's appearance until a visitor picks one; the first is the default.
+MODES = ("system", "light", "dark")
 APP_KEYS = {"repo", "assets", "forge", "license"}
 LICENSE_KEYWORDS = ("auto", "forge", "repo", "meta", "metainfo")
 LICENSE_RE = re.compile(r"^[A-Za-z0-9.+:=/()_ -]+$")
@@ -51,6 +54,8 @@ class App:
     forge: str | None = None
     # auto, forge, meta, or a license expression used when neither source states one.
     license: str = "auto"
+    # The file the app is listed in, when it comes from an included file; None for pond.yml.
+    source: str | None = None
 
     @property
     def name(self):
@@ -72,6 +77,8 @@ class Pond:
     social_image: str | None = None
     # One of ORDERS: how the landing page lists apps.
     order: str = ORDERS[0]
+    # One of MODES, from pond.theme.mode. theme holds only colors.
+    mode: str = MODES[0]
 
 
 @dataclass(frozen=True)
@@ -79,6 +86,10 @@ class Config:
     pond: Pond
     apps: tuple = field(default_factory=tuple)
     path: Path | None = None
+    # The include: list as written; load() reads the files.
+    include: tuple = field(default_factory=tuple)
+    # (name, sha256 of its contents or None if unreadable) for each included file, from load().
+    included: tuple = field(default_factory=tuple)
 
 
 class _UniqueKeyLoader(yaml.SafeLoader):
@@ -165,7 +176,8 @@ def parse(text, path=CONFIG_NAME):
         raise ConfigError(path, [f"not valid YAML: {error}"]) from None
     if not isinstance(data, dict):
         raise ConfigError(path, ["the file must contain the 'pond' and 'apps' sections"])
-    _unknown(data, {"pond", "apps"}, "", problems)
+    _unknown(data, {"pond", "apps", "include"}, "", problems)
+    include = _include_list(data.get("include"), problems)
 
     pond_data = data.get("pond")
     if not isinstance(pond_data, dict):
@@ -200,6 +212,7 @@ def parse(text, path=CONFIG_NAME):
         images[key] = _string(pond_data.get(key), f"pond.{key}", problems)
 
     theme = {}
+    mode = MODES[0]
     raw_theme = _raw_theme(text)
     theme_data = pond_data.get("theme")
     if theme_data is not None and not isinstance(theme_data, dict):
@@ -209,6 +222,12 @@ def parse(text, path=CONFIG_NAME):
         where = f"pond.theme.{key}"
         if key not in THEME_KEYS:
             problems.append(f"unknown key {where} (allowed: {', '.join(THEME_KEYS)})")
+        elif key == "mode":
+            given = _string(value, where, problems)
+            if given and given not in MODES:
+                problems.append(f"{where} must be one of {', '.join(MODES)}; got {given!r}")
+            elif given:
+                mode = given
         elif value is None:
             # YAML reads an unquoted #rrggbb as a comment, leaving the key empty.
             problems.append(f'{where} is empty; drop the # or use quotes, for example {key}: 26a269')
@@ -217,7 +236,37 @@ def parse(text, path=CONFIG_NAME):
         else:
             theme[key] = "#" + raw_theme[key].strip().lstrip("#").lower()
 
-    apps_data = data.get("apps")
+    apps = _parse_apps(data.get("apps"), problems)
+
+    if problems:
+        raise ConfigError(path, problems)
+    pond = Pond(title=title, remote=remote, subtitle=subtitle, arches=tuple(clean_arches),
+              logo=images["logo"], logo_dark=images["logo-dark"], favicon=images["favicon"],
+              theme=theme, css=images["css"], social_image=images["social-image"], order=order, mode=mode)
+    return Config(pond=pond, apps=tuple(apps), path=Path(path), include=include)
+
+
+def _include_list(value, problems):
+    """include: as a tuple of repository-relative paths."""
+    if value is None:
+        return ()
+    if not isinstance(value, list):
+        problems.append("include must be a list of files, such as [apps/alex.yml]")
+        return ()
+    found = []
+    for i, item in enumerate(value):
+        name = _string(item, f"include[{i}]", problems)
+        if not name:
+            continue
+        if Path(name).is_absolute() or ".." in Path(name).parts:
+            problems.append(f"include[{i}] {name!r} must be a path inside the repository, such as apps/alex.yml")
+        elif name not in found:
+            found.append(name)
+    return tuple(found)
+
+
+def _parse_apps(apps_data, problems, source=None):
+    """The apps: section of pond.yml or of an included file."""
     if apps_data is None:
         apps_data = {}
     if not isinstance(apps_data, dict):
@@ -255,14 +304,26 @@ def parse(text, path=CONFIG_NAME):
             problems.append(f"{where}.license must be auto, forge, meta, or an SPDX license such as "
                             f"GPL-3.0-or-later; got {license!r}")
         if repo:
-            apps.append(App(app_id, repo, assets, forge, license))
+            apps.append(App(app_id, repo, assets, forge, license, source))
+    return apps
 
+
+def parse_included(text, name):
+    """The apps in an included file, which holds only an apps: section."""
+    problems = []
+    try:
+        data = yaml.load(text, Loader=_UniqueKeyLoader)
+    except yaml.YAMLError as error:
+        raise ConfigError(name, [f"not valid YAML: {error}"]) from None
+    if data is None:
+        data = {}
+    if not isinstance(data, dict):
+        raise ConfigError(name, ["an included file must contain an 'apps' section"])
+    _unknown(data, {"apps"}, "", problems)
+    apps = _parse_apps(data.get("apps"), problems, source=name)
     if problems:
-        raise ConfigError(path, problems)
-    pond = Pond(title=title, remote=remote, subtitle=subtitle, arches=tuple(clean_arches),
-              logo=images["logo"], logo_dark=images["logo-dark"], favicon=images["favicon"],
-              theme=theme, css=images["css"], social_image=images["social-image"], order=order)
-    return Config(pond=pond, apps=tuple(apps), path=Path(path))
+        raise ConfigError(name, problems)
+    return apps
 
 
 def find(path=None, root=".", warn=True):
@@ -285,10 +346,42 @@ def find(path=None, root=".", warn=True):
     return new
 
 
-def load(path):
+def load(path, warn=True):
+    """The configuration, with the apps of each included file after pond.yml's own.
+
+    An included file that cannot be read is skipped with a warning; one with mistakes is an
+    error naming that file. An app ID listed twice keeps its first listing, pond.yml's first.
+    warn=False keeps a second command in the same run from repeating the warnings.
+    """
     path = Path(path)
     try:
         text = path.read_text()
     except OSError as error:
         raise ConfigError(path, [f"cannot read the file: {error.strerror}"]) from None
-    return parse(text, path)
+    cfg = parse(text, path)
+    if not cfg.include:
+        return cfg
+
+    root = path.parent.resolve()
+    apps, included = list(cfg.apps), []
+    seen = {app.id: path.name for app in apps}
+    for name in cfg.include:
+        file = (root / name).resolve()
+        try:
+            if root not in file.parents:
+                raise OSError(0, "it is outside the repository")
+            data = file.read_bytes()
+        except OSError as error:
+            if warn:
+                log.warning(f"include {name}: cannot be read ({error.strerror}); its apps are skipped")
+            included.append((name, None))
+            continue
+        included.append((name, hashlib.sha256(data).hexdigest()))
+        for app in parse_included(data.decode("utf-8", "replace"), name):
+            if app.id in seen:
+                if warn:
+                    log.warning(f"{name}: {app.id} is already listed in {seen[app.id]}; this listing is skipped")
+                continue
+            seen[app.id] = name
+            apps.append(app)
+    return Config(pond=cfg.pond, apps=tuple(apps), path=cfg.path, include=cfg.include, included=tuple(included))

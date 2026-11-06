@@ -4,7 +4,7 @@ import json
 from urllib.parse import urlparse
 from pathlib import Path
 
-from . import images, licenses, theme
+from . import config, images, licenses, theme
 
 STATE_FILE = "apps.json"
 GITHUB_MARK = (
@@ -14,18 +14,35 @@ GITHUB_MARK = (
 )
 
 PAGE = """<!doctype html>
-<html lang="en">
+<html lang="en"{mode_attr}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+// The visitor's appearance choice, applied before the page draws so it never flashes the other one.
+try {{
+  const mode = localStorage.getItem("frogpak-mode");
+  if (mode === "system") delete document.documentElement.dataset.mode;
+  else if (mode === "light" || mode === "dark") document.documentElement.dataset.mode = mode;
+}} catch (error) {{}}
+</script>
 <title>{title}</title>
 {social}
 {favicons}
 <style>
-:root {{ {light} }}
+:root {{ {light} color-scheme: light; }}
+:root[data-mode="dark"] {{ {dark} color-scheme: dark; }}
 @media (prefers-color-scheme: dark) {{
-  :root {{ {dark} }}
+  :root:not([data-mode="light"]) {{ {dark} color-scheme: dark; }}
 }}
+.brand .logo-dark {{ display: none; }}
+:root[data-mode="dark"] .brand .logo-light {{ display: none; }}
+:root[data-mode="dark"] .brand .logo-dark {{ display: block; }}
+@media (prefers-color-scheme: dark) {{
+  :root:not([data-mode="light"]) .brand .logo-light {{ display: none; }}
+  :root:not([data-mode="light"]) .brand .logo-dark {{ display: block; }}
+}}
+[hidden] {{ display: none !important; }}
 * {{ box-sizing: border-box; }}
 body {{
   margin: 0; background: var(--bg); color: var(--fg);
@@ -33,11 +50,28 @@ body {{
 }}
 main {{ max-width: 44rem; margin: 0 auto; padding: 2rem 1rem 4rem; }}
 h1 {{ font-size: 1.75rem; margin: 0; }}
-.top {{ display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .25rem; }}
+.top {{ display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1rem; margin-bottom: .25rem; }}
+.top-end {{ display: flex; align-items: center; gap: 1rem; margin-left: auto; }}
 .brand {{ display: flex; align-items: center; gap: .75rem; min-width: 0; }}
 .brand img {{ height: 44px; width: auto; max-width: 10rem; object-fit: contain; flex: none; }}
 .mark {{ vertical-align: -2px; margin-right: .3rem; }}
 h2 {{ font-size: 1.15rem; margin: 2rem 0 .75rem; }}
+.apps-head {{
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: .5rem 1rem; margin: 2rem 0 .75rem;
+}}
+.apps-head h2 {{ margin: 0; }}
+.toggle {{ display: flex; }}
+.toggle button {{
+  font: inherit; font-size: .85rem; padding: .25rem .8rem; cursor: pointer;
+  color: var(--fg); background: var(--card); border: 1px solid var(--border);
+}}
+.toggle button + button {{ border-left: none; }}
+.toggle button:first-child {{ border-radius: 8px 0 0 8px; }}
+.toggle button:last-child {{ border-radius: 0 8px 8px 0; }}
+.toggle button[aria-pressed="true"] {{ background: var(--accent); border-color: var(--accent); color: var(--on-accent); }}
+.mode-picker button {{ display: grid; place-items: center; padding: .3rem .55rem; }}
+.mode-picker svg {{ width: 1.1rem; height: 1.1rem; }}
 p {{ margin: 0 0 1rem; color: var(--muted); }}
 a {{ color: var(--accent); }}
 .card {{
@@ -52,8 +86,9 @@ a {{ color: var(--accent); }}
 }}
 .icon img {{ width: 64px; height: 64px; }}
 .body {{ min-width: 0; flex: 1; }}
-.app h3 {{ margin: 0; font-size: 1.1rem; }}
-.app h3 small {{ color: var(--muted); font-weight: normal; font-size: .85rem; margin-left: .35rem; }}
+.app h3 {{ margin: 0; font-size: 1.1rem; min-width: 0; overflow-wrap: break-word; }}
+/* The version wraps whole, under the name, rather than splitting. */
+.app h3 small {{ display: inline-block; white-space: nowrap; color: var(--muted); font-weight: normal; font-size: .85rem; }}
 .app p {{ margin: .25rem 0 .75rem; }}
 .badge {{
   display: inline-block; font-size: .8rem; line-height: 1.4; color: var(--muted);
@@ -81,7 +116,7 @@ a {{ color: var(--accent); }}
 .visually-hidden {{
   position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
 }}
-.head {{ display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }}
+.head {{ display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem .75rem; }}
 .install {{ position: relative; display: flex; flex: none; }}
 .install-main, .install summary {{
   background: var(--accent); color: var(--on-accent); cursor: pointer;
@@ -99,7 +134,7 @@ a {{ color: var(--accent); }}
 .install details[open] summary svg {{ transform: rotate(180deg); }}
 .install-main:hover, .install summary:hover {{ filter: brightness(.92); }}
 .install-menu {{
-  position: absolute; right: 0; top: calc(100% + .4rem); z-index: 10; width: min(21rem, calc(100vw - 2rem));
+  position: absolute; right: 0; top: calc(100% + .4rem); z-index: 10; width: min(21rem, calc(100vw - 2.25rem));
   background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: .75rem;
   box-shadow: 0 8px 24px rgb(0 0 0 / .2);
 }}
@@ -114,6 +149,13 @@ a {{ color: var(--accent); }}
 .scope-picker button[aria-pressed="true"] {{ background: var(--accent); border-color: var(--accent); color: var(--on-accent); }}
 .scope-picker + .cmd {{ border-radius: 0 0 8px 8px; }}
 .hint {{ font-size: .9rem; margin: .6rem 0 0; }}
+/* On the narrowest screens the Install button goes under the name instead of past the card's edge. */
+@media (max-width: 22rem) {{
+  .head {{ flex-wrap: wrap; position: relative; }}
+  /* The menu then opens from the card's text column rather than from the button's right edge. */
+  .install {{ position: static; }}
+  .install-menu {{ width: auto; left: calc(-64px - 1rem); }}
+}}
 footer {{ margin-top: 3rem; font-size: .85rem; color: var(--muted); text-align: center; }}
 </style>
 {custom_css}
@@ -122,7 +164,7 @@ footer {{ margin-top: 3rem; font-size: .85rem; color: var(--muted); text-align: 
 <main>
 <div class="top">
 <div class="brand">{logo}<h1>{title}</h1></div>
-{source}
+<div class="top-end">{source}{mode_picker}</div>
 </div>
 {subtitle}
 
@@ -137,11 +179,47 @@ footer {{ margin-top: 3rem; font-size: .85rem; color: var(--muted); text-align: 
 <p class="hint" data-for="user" hidden>For your account only. No password needed.</p>
 </div>
 
-<h2>Apps</h2>
+<div class="apps-head"><h2>Apps</h2>{arch_picker}</div>
 {apps}
+<p class="no-apps" hidden></p>
 <footer>{updated}Published with <a href="https://github.com/FrogPak/engine">FrogPak</a></footer>
 </main>
 <script>
+const MODE_KEY = "frogpak-mode";
+function showMode() {{
+  const mode = document.documentElement.dataset.mode || "system";
+  for (const button of document.querySelectorAll("[data-mode-choice]")) button.setAttribute("aria-pressed", String(button.dataset.modeChoice === mode));
+}}
+for (const button of document.querySelectorAll("[data-mode-choice]")) {{
+  button.addEventListener("click", () => {{
+    const mode = button.dataset.modeChoice;
+    if (mode === "system") delete document.documentElement.dataset.mode;
+    else document.documentElement.dataset.mode = mode;
+    try {{ localStorage.setItem(MODE_KEY, mode); }} catch (error) {{}}
+    showMode();
+  }});
+}}
+showMode();
+const ARCH_KEY = "frogpak-arch";
+const archButtons = [...document.querySelectorAll("[data-arch]")];
+function setArch(arch) {{
+  let shown = 0;
+  for (const card of document.querySelectorAll(".card.app")) {{
+    card.hidden = arch !== "" && !card.dataset.arches.split(" ").includes(arch);
+    if (!card.hidden) shown++;
+  }}
+  for (const button of archButtons) button.setAttribute("aria-pressed", String(button.dataset.arch === arch));
+  const empty = document.querySelector(".no-apps");
+  empty.hidden = shown > 0;
+  empty.textContent = `No apps for ${{arch}} yet.`;
+  try {{ localStorage.setItem(ARCH_KEY, arch); }} catch (error) {{}}
+}}
+for (const button of archButtons) button.addEventListener("click", () => setArch(button.dataset.arch));
+if (archButtons.length) {{
+  let savedArch = null;
+  try {{ savedArch = localStorage.getItem(ARCH_KEY); }} catch (error) {{}}
+  setArch(archButtons.some((button) => button.dataset.arch === savedArch) ? savedArch : "");
+}}
 const SCOPE_KEY = "frogpak-scope";
 function setScope(scope) {{
   for (const span of document.querySelectorAll(".scope")) span.textContent = scope === "user" ? " --user" : "";
@@ -218,7 +296,7 @@ COPY_BUTTON = (
 CHEVRON = ('<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" '
            'stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>')
 
-APP = """<div class="card app">
+APP = """<div class="card app" data-arches="{arches}">
 <div class="icon">{icon}</div>
 <div class="body">
 <div class="head">
@@ -339,11 +417,44 @@ def favicon_links(has_svg):
 
 
 def logo_markup(logo_name, dark_name):
-    img = f'<img src="{_e(logo_name)}" alt="">'
+    """The logo; with a dark one, both, and the page's CSS shows the one for the current appearance.
+    A <picture> could only follow the system's appearance, not the page's toggle."""
     if not dark_name:
-        return img
-    return (f'<picture><source srcset="{_e(dark_name)}" media="(prefers-color-scheme: dark)">'
-            f"{img}</picture>")
+        return f'<img src="{_e(logo_name)}" alt="">'
+    return (f'<img class="logo-light" src="{_e(logo_name)}" alt="">'
+            f'<img class="logo-dark" src="{_e(dark_name)}" alt="">')
+
+
+# Monitor, sun and moon.
+MODE_ICONS = {
+    "system": '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+    "light": ('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4'
+              'M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
+    "dark": '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+}
+
+
+def mode_picker(default):
+    """System, light and dark buttons; default is pressed until the page script runs."""
+    buttons = []
+    for mode in config.MODES:
+        buttons.append(
+            f'<button type="button" data-mode-choice="{mode}" aria-pressed="{str(mode == default).lower()}" '
+            f'title="{mode.capitalize()}"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" '
+            f'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+            f'{MODE_ICONS[mode]}</svg><span class="visually-hidden">{mode.capitalize()}</span></button>')
+    return f'<div class="toggle mode-picker" role="group" aria-label="Appearance">{"".join(buttons)}</div>'
+
+
+def arch_picker(arches):
+    """All, then each architecture; none when the Pond publishes only one."""
+    if len(arches) < 2:
+        return ""
+    buttons = ['<button type="button" data-arch="" aria-pressed="true">All</button>']
+    buttons += [f'<button type="button" data-arch="{_e(arch)}" aria-pressed="false">{_e(arch)}</button>'
+                for arch in arches]
+    return f'<div class="toggle arch-picker" role="group" aria-label="Show apps for">{"".join(buttons)}</div>'
+
 
 
 def _released_key(entry):
@@ -380,9 +491,10 @@ def write(site, pond, base_url, source_url, entries, logo_name, dark_name, has_s
     for entry in entries:
         icon = (f'<img src="{_e(entry["icon"])}" alt="">' if entry["icon"]
                 else _e(entry["name"][:1].upper()))
-        version = f'<small>{_e(entry["version"])}</small>' if entry["version"] else ""
+        # A space, not a margin, before the version, so a version wrapped under the name is not indented.
+        version = f' <small>{_e(entry["version"])}</small>' if entry["version"] else ""
         cards.append(APP.format(
-            icon=icon, name=_e(entry["name"]), version=version,
+            icon=icon, name=_e(entry["name"]), version=version, arches=_e(" ".join(entry.get("arches") or ())),
             summary=_e(entry["summary"] or "No description yet."), facts=facts_markup(entry),
             remote=_e(pond.remote), app_id=_e(entry["id"]), links=links_markup(entry),
             # GNOME Software 48+ and KDE Discover 6.5+ open flatpak+https: links, as Flathub's button does.
@@ -401,6 +513,9 @@ def write(site, pond, base_url, source_url, entries, logo_name, dark_name, has_s
         social=social_tags(pond, base_url, social_name),
         logo=logo_markup(logo_name, dark_name),
         source=source,
+        mode_attr="" if pond.mode == "system" else f' data-mode="{pond.mode}"',
+        mode_picker=mode_picker(pond.mode),
+        arch_picker=arch_picker(pond.arches) if cards else "",
         remote=_e(pond.remote),
         base_url=_e(base_url), copy=COPY_BUTTON,
         apps="\n".join(cards) or "<p>No apps yet.</p>",

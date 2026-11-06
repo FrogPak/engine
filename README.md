@@ -9,7 +9,7 @@ A FrogPak deployment is called a **Pond**: one GitHub repository that collects y
 - Checks for new releases hourly and rebuilds only when something changed; apps can trigger an update the moment they release.
 - A landing page with install commands, your logo and colors, in light and dark mode, and each app's version, release date and license.
 
-![A Pond's landing page, split diagonally between light and dark mode: the command to add the remote, with System and User tabs, and one card per app with its icon, version, summary, release date, license, links and an Install button, one with its menu open to show the .flatpakref download and install command](docs/images/landing-page.png)
+![A Pond's landing page, split diagonally between light and dark mode: system, light and dark buttons beside the Source link, the command to add the remote, with System and User tabs, All, x86_64 and aarch64 buttons beside the Apps heading, and one card per app with its icon, version, summary, release date, license, links and an Install button, one with its menu open to show the .flatpakref download and install command](docs/images/landing-page.png)
 
 ## Start a Pond
 

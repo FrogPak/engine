@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.6
+
+- A new `include` setting lists more files of apps, such as one per developer. Each holds an `apps:` section like `pond.yml`'s. Editing one republishes the Pond at the next check.
+- The page has system, light and dark buttons, and remembers each visitor's choice. A new `theme.mode` setting starts the page in `light` or `dark` mode instead of following the visitor's system. The dark logo and colors follow the page's mode. A custom stylesheet's `prefers-color-scheme` rules follow only the system; see [Custom stylesheet](docs/configuration.md#custom-stylesheet).
+- When a Pond publishes more than one architecture, buttons beside the Apps heading show only the apps for one, and each visitor's choice is remembered. On narrow screens they go under the heading.
+- On the narrowest phones, an app card's Install button goes under the app's name instead of past the card's edge, and a long name wraps between words with its version kept whole.
+
 ## 1.1.5
 
 - A new `order` setting chooses how the landing page lists apps: `listed`, the default and the order before; `name`; `newest`, by release date; or `app-id`, which keeps each developer's apps together. `apps.json` follows the same order.

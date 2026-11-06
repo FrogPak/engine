@@ -71,12 +71,13 @@ def fingerprint(config, states, engine_version, social=None, files=None):
     """What a publish depends on. A difference from the published copy means the Pond is out of date.
 
     social identifies the shared-link image, from social.identity; files the logos, favicon
-    and stylesheet, from images.identities.
+    and stylesheet, from images.identities. Included app lists count as configuration.
     """
     config_text = config.path.read_bytes() if config.path and config.path.exists() else b""
     return {
         "engine": engine_version,
         "config": hashlib.sha256(config_text).hexdigest(),
+        "includes": [list(item) for item in config.included],
         "social": social,
         "files": files,
         "apps": {

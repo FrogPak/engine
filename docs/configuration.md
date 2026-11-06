@@ -35,12 +35,14 @@ apps:
 | `remote` | yes | Name people use for the remote: lowercase letters, digits and hyphens |
 | `arches` | no | Architectures to publish; default `[x86_64, aarch64]` |
 | `logo` | no | Logo for the landing page; see [Logos](#logos-and-favicon) |
-| `logo-dark` | no | Logo used when the visitor's system is in dark mode |
+| `logo-dark` | no | Logo used when the page is in dark mode |
 | `favicon` | no | Square image for the browser tab and the remote's icon |
-| `theme` | no | Colors; see [Theme](#theme) |
+| `theme` | no | Colors, and whether the page starts in light or dark mode; see [Theme](#theme) |
 | `css` | no | Your own stylesheet, a repository path or `https://` URL, loaded after FrogPak's styles |
 | `social-image` | no | Image shown when the page's link is shared; default: the repository's social preview image. See [Shared links](#shared-links) |
 | `order` | no | How the landing page lists apps: `listed` (default), `name`, `newest` or `app-id`. See [App order](#app-order) |
+
+Apps can also be listed in other files; see [Included files](#included-files).
 
 YAML guesses types for unquoted text: `no` becomes false and `1.10` becomes the number 1.1. FrogPak reports these instead of guessing along; put such values in quotes.
 
@@ -57,7 +59,7 @@ Each key is an app ID, such as `org.example.Notes`. Under it:
 
 The Pond publishes each app's newest release that is not a pre-release. Apps that cannot be published, such as one with no release or no matching files, are skipped with a warning and the rest are published.
 
-Each app's card shows its version, the date its release was published, and its license. It links to the app's repository, and to its website, bug tracker and donation page when its metainfo lists them (`<url type="homepage">`, `bugtracker` and `donation`, `https:` only); an app without one has no link for it. The page's footer shows when it was last published, in each visitor's own time zone; a Pond only republishes when something changes, so that is when the page last changed, not when it was last checked.
+Each app's card shows its version, the date its release was published, and its license. It links to the app's repository, and to its website, bug tracker and donation page when its metainfo lists them (`<url type="homepage">`, `bugtracker` and `donation`, `https:` only); an app without one has no link for it. When the Pond publishes more than one architecture, buttons beside the Apps heading show only the apps available for one of them; each visitor's choice is remembered. The page's footer shows when it was last published, in each visitor's own time zone; a Pond only republishes when something changes, so that is when the page last changed, not when it was last checked.
 
 ### Licenses
 
@@ -114,20 +116,52 @@ Codeberg is recognized from its address. For a self-hosted Forgejo or Gitea, add
 
 GitLab is planned; until then, a GitLab `repo` is reported as not supported yet.
 
+## Included files
+
+`include` lists more files of apps, so a large Pond can split its list, for example one file per developer:
+
+```yaml
+include:
+  - apps/alex.yml
+  - apps/sam.yml
+
+apps:
+  org.example.Notes:
+    repo: alex/notes
+```
+
+Each included file holds only an `apps:` section, written as in `pond.yml`:
+
+```yaml
+apps:
+  org.example.Paint:
+    repo: sam/paint
+    assets: "paint-{arch}.flatpak"
+```
+
+- Paths are relative to the repository root and must stay inside it. Only files in the repository can be included.
+- Apps are listed in `pond.yml`'s order first, then each file's, in the order of `include`. The `order` setting can sort them differently.
+- An app ID listed more than once keeps its first listing, and the publish warns about the others.
+- A mistake in an included file is an error naming that file, like one in `pond.yml`. A file that does not exist is skipped with a warning, and the rest are published.
+- Editing an included file republishes the Pond at the next check, as editing `pond.yml` does.
+
 ## Theme
 
 ```yaml
   theme:
+    mode: system
     accent: 1c7a4f
     accent-dark: 8ff0a4
     background: f6f5f4
     background-dark: "#1d1d1d"
 ```
 
-All four are optional hex colors, 3 or 6 digits. Write them without `#`, or with `#` inside quotes: YAML reads an unquoted `#1c7a4f` as a comment, and FrogPak reports that.
+`mode` is how the page looks until a visitor chooses: `system` (default) follows the visitor's system, while `light` or `dark` start the page in that mode. Buttons at the top of the page switch between system, light and dark, and each visitor's choice is remembered.
+
+The four colors are optional hex colors, 3 or 6 digits. Write them without `#`, or with `#` inside quotes: YAML reads an unquoted `#1c7a4f` as a comment, and FrogPak reports that.
 
 - `accent` colors links, buttons and the selected tab; `background` is the page color.
-- The `-dark` variants apply when the visitor's system is in dark mode. Left out, they are derived from the light colors.
+- The `-dark` variants apply when the page is in dark mode. Left out, they are derived from the light colors.
 - Text, card, border and code-block colors are derived from the background.
 - Derived colors are adjusted until text is readable. Colors you set are used as given; if one is hard to read, the publish warns and suggests a nearby color that passes.
 - Readable means the accent has at least 4.5:1 contrast against the page and cards, where links and text use it, and 3:1 against code blocks, where it only colors the copy button's icon. These are the WCAG levels for text and for icons. The default accents, GNOME's blue, pass both.
@@ -135,6 +169,15 @@ All four are optional hex colors, 3 or 6 digits. Write them without `#`, or with
 ## Custom stylesheet
 
 `css` adds a stylesheet after FrogPak's own, so its rules win. Use it for anything the theme cannot do. The page's HTML can change between FrogPak versions, so a custom stylesheet may need updating when you upgrade; the theme colors are the stable way to restyle.
+
+Rules for dark mode should follow the page's mode, not only the system's, so that they also apply when a visitor picks dark mode on a light system, and not when they pick light mode on a dark one:
+
+```css
+:root[data-mode="dark"] .card { border-width: 2px; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode="light"]) .card { border-width: 2px; }
+}
+```
 
 ## Logos and favicon
 
