@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.5
+
+- A new `order` setting chooses how the landing page lists apps: `listed`, the default and the order before; `name`; `newest`, by release date; or `app-id`, which keeps each developer's apps together. `apps.json` follows the same order.
+
 ## 1.1.4
 
 - Changing a logo, dark logo, favicon or stylesheet file republishes the page at the next check. Before, only changes to `pond.yml` and to apps' releases did, so a new logo waited for one of those or a forced rebuild. Files behind URLs are not watched.

@@ -346,6 +346,27 @@ def logo_markup(logo_name, dark_name):
             f"{img}</picture>")
 
 
+def _released_key(entry):
+    # A date without a time, from metainfo, counts as the start of that day in UTC.
+    value = entry.get("released") or ""
+    return value + "T00:00:00Z" if len(value) == 10 else value
+
+
+def ordered(entries, order):
+    """entries in the order pond.order names: listed, name, newest or app-id."""
+    by_name = lambda e: ((e.get("name") or e["id"]).casefold(), e["id"].casefold())
+    if order == "name":
+        return sorted(entries, key=by_name)
+    if order == "app-id":
+        return sorted(entries, key=lambda e: e["id"].casefold())
+    if order == "newest":
+        # Newest first; apps with no known date after them, alphabetically.
+        dated = sorted((e for e in entries if e.get("released")), key=by_name)
+        dated = sorted(dated, key=_released_key, reverse=True)
+        return dated + sorted((e for e in entries if not e.get("released")), key=by_name)
+    return list(entries)
+
+
 def write(site, pond, base_url, source_url, entries, logo_name, dark_name, has_svg_favicon, state,
           custom_css=False, updated=None, social_name=None):
     """entries: dicts with id, name, summary, version, released, license, url, icon.
@@ -353,6 +374,8 @@ def write(site, pond, base_url, source_url, entries, logo_name, dark_name, has_s
     updated is the publish time, shown on the page; it is not part of state.
     social_name is the shared-link image in the site, or None to offer the icon.
     """
+    # The page and apps.json both follow pond.order.
+    entries = ordered(entries, pond.order)
     cards = []
     for entry in entries:
         icon = (f'<img src="{_e(entry["icon"])}" alt="">' if entry["icon"]

@@ -40,6 +40,7 @@ apps:
 | `theme` | no | Colors; see [Theme](#theme) |
 | `css` | no | Your own stylesheet, a repository path or `https://` URL, loaded after FrogPak's styles |
 | `social-image` | no | Image shown when the page's link is shared; default: the repository's social preview image. See [Shared links](#shared-links) |
+| `order` | no | How the landing page lists apps: `listed` (default), `name`, `newest` or `app-id`. See [App order](#app-order) |
 
 YAML guesses types for unquoted text: `no` becomes false and `1.10` becomes the number 1.1. FrogPak reports these instead of guessing along; put such values in quotes.
 
@@ -142,6 +143,17 @@ All four are optional hex colors, 3 or 6 digits. Write them without `#`, or with
 - Wide logos are fine on the page; they are scaled, never stretched. The favicon is made from the logo unless `favicon` is set, so a wide logo produces a warning suggesting a square `favicon`.
 - URLs are fetched at every publish. If one cannot be fetched, the publish continues with the default and a warning. SVGs from URLs are published as PNG images.
 - Changing a logo, favicon or `css` file in the repository republishes the page at the next check, even when `pond.yml` itself is unchanged. A file behind a URL is not watched: a change there shows at the next publish, or use **Run workflow** with *Rebuild even if nothing changed*.
+
+## App order
+
+| `order` | Apps listed |
+| --- | --- |
+| `listed` (default) | As they appear under `apps:` |
+| `name` | Alphabetically by name, ignoring case |
+| `newest` | Most recent release first; apps with no known release date last, alphabetically |
+| `app-id` | Alphabetically by app ID, which keeps each developer's apps together (`net.example.*`, `io.github.someone.*`) |
+
+`apps.json` lists apps in the same order. With `newest`, a new release moves its app to the top at the next publish.
 
 ## Shared links
 

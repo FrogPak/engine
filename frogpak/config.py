@@ -18,7 +18,9 @@ FORGES = ("github", "forgejo", "gitea", "gitlab")
 PLACEHOLDERS = {"app_id", "name", "arch"}
 
 POND_KEYS = {"title", "subtitle", "remote", "arches", "logo", "logo-dark", "favicon", "theme", "css",
-             "social-image"}
+             "social-image", "order"}
+# How the landing page lists apps; the first is the default.
+ORDERS = ("listed", "name", "newest", "app-id")
 THEME_KEYS = ("accent", "accent-dark", "background", "background-dark")
 APP_KEYS = {"repo", "assets", "forge", "license"}
 LICENSE_KEYWORDS = ("auto", "forge", "repo", "meta", "metainfo")
@@ -68,6 +70,8 @@ class Pond:
     css: str | None = None
     # The image for shared links; None uses the repository's social preview image.
     social_image: str | None = None
+    # One of ORDERS: how the landing page lists apps.
+    order: str = ORDERS[0]
 
 
 @dataclass(frozen=True)
@@ -174,6 +178,10 @@ def parse(text, path=CONFIG_NAME):
     if remote and not REMOTE_RE.match(remote):
         problems.append(f"pond.remote {remote!r} may contain only lowercase letters, digits and hyphens")
     subtitle = _string(pond_data.get("subtitle"), "pond.subtitle", problems) or ""
+    order = _string(pond_data.get("order"), "pond.order", problems) or ORDERS[0]
+    if order not in ORDERS:
+        problems.append(f"pond.order must be one of {', '.join(ORDERS)}; got {order!r}")
+        order = ORDERS[0]
 
     arches = pond_data.get("arches", list(DEFAULT_ARCHES))
     if not isinstance(arches, list) or not arches:
@@ -253,7 +261,7 @@ def parse(text, path=CONFIG_NAME):
         raise ConfigError(path, problems)
     pond = Pond(title=title, remote=remote, subtitle=subtitle, arches=tuple(clean_arches),
               logo=images["logo"], logo_dark=images["logo-dark"], favicon=images["favicon"],
-              theme=theme, css=images["css"], social_image=images["social-image"])
+              theme=theme, css=images["css"], social_image=images["social-image"], order=order)
     return Config(pond=pond, apps=tuple(apps), path=Path(path))
 
 
