@@ -8,7 +8,12 @@ LIGHT = {"bg": "#fafafa", "card": "#ffffff", "fg": "#1e1e1e", "muted": "#5e5c64"
 DARK = {"bg": "#242424", "card": "#303030", "fg": "#ffffff", "muted": "#c0bfbc",
         "border": "#454545", "accent": "#78aeed", "code": "#1e1e1e"}
 WHITE, BLACK, INK = "#ffffff", "#000000", "#1e1e1e"
+# WCAG: text needs 4.5:1, icons and other non-text 3:1. Links and text use the accent on
+# the page and cards; on code blocks it only colors the copy icon.
 TEXT_CONTRAST = 4.5
+ICON_CONTRAST = 3.0
+TEXT_SURFACES = ("bg", "card")
+ICON_SURFACES = ("code",)
 
 
 def rgb(color):
@@ -62,13 +67,24 @@ def fit_accent(accent, palette):
     target = WHITE if luminance(palette["bg"]) < 0.5 else BLACK
     for step in range(21):
         candidate = mix(accent, target, step / 20)
-        if worst_contrast(candidate, palette) >= TEXT_CONTRAST:
+        if readable(candidate, palette):
             return candidate
     return mix(accent, target, 1)
 
 
 def worst_contrast(accent, palette):
-    return min(contrast(accent, palette[k]) for k in ("bg", "card", "code"))
+    """The accent's lowest contrast where it is used for text: the page and cards."""
+    return min(contrast(accent, palette[k]) for k in TEXT_SURFACES)
+
+
+def icon_contrast(accent, palette):
+    """The accent's lowest contrast where it is used only for icons: code blocks."""
+    return min(contrast(accent, palette[k]) for k in ICON_SURFACES)
+
+
+def readable(accent, palette):
+    return (worst_contrast(accent, palette) >= TEXT_CONTRAST
+            and icon_contrast(accent, palette) >= ICON_CONTRAST)
 
 
 def palettes(theme):
@@ -94,11 +110,15 @@ def palettes(theme):
         palette["on-accent"] = readable_on(palette["accent"])
         if palette["accent"] == default["accent"] and palette["bg"] == default["bg"]:
             continue
-        ratio = worst_contrast(palette["accent"], palette)
+        source = f"pond.theme.{key}" if key in theme else f"The derived {name} accent"
+        ratio, icon = worst_contrast(palette["accent"], palette), icon_contrast(palette["accent"], palette)
         if ratio < TEXT_CONTRAST:
-            source = f"pond.theme.{key}" if key in theme else f"The derived {name} accent"
             log.warning(f"{source} {palette['accent']} is hard to read in {name} mode "
                         f"(contrast {math.floor(ratio * 10) / 10}:1; text needs 4.5:1). "
+                        f"{fit_accent(palette['accent'], palette)} would pass.")
+        elif icon < ICON_CONTRAST:
+            log.warning(f"{source} {palette['accent']} makes copy buttons hard to see on code blocks in "
+                        f"{name} mode (contrast {math.floor(icon * 10) / 10}:1; icons need 3:1). "
                         f"{fit_accent(palette['accent'], palette)} would pass.")
     return light, dark
 

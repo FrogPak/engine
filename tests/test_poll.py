@@ -5,7 +5,7 @@ from contextlib import redirect_stdout
 from pathlib import Path
 from unittest import mock
 
-from frogpak import __version__, cli, fetch, http
+from frogpak import __version__, cli, fetch, http, images
 from frogpak.sources import Asset, Release
 
 CONFIG = """pond:
@@ -50,7 +50,9 @@ class PollTests(unittest.TestCase):
         from frogpak import config
         cfg = config.load(self.config)
         with mock.patch("frogpak.sources.resolve", return_value=FakeSource(tag)):
-            return cli._normalize(fetch.fingerprint(cfg, fetch.survey(cfg), __version__))
+            # As publish records it, including the files the page is built from.
+            return cli._normalize(fetch.fingerprint(cfg, fetch.survey(cfg), __version__, None,
+                                                    images.identities(cfg.pond, ".")))
 
     def test_unchanged(self):
         self.assertEqual(self.poll("v1", self.state("v1")), "changed=false")

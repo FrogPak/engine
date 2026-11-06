@@ -129,6 +129,7 @@ All four are optional hex colors, 3 or 6 digits. Write them without `#`, or with
 - The `-dark` variants apply when the visitor's system is in dark mode. Left out, they are derived from the light colors.
 - Text, card, border and code-block colors are derived from the background.
 - Derived colors are adjusted until text is readable. Colors you set are used as given; if one is hard to read, the publish warns and suggests a nearby color that passes.
+- Readable means the accent has at least 4.5:1 contrast against the page and cards, where links and text use it, and 3:1 against code blocks, where it only colors the copy button's icon. These are the WCAG levels for text and for icons. The default accents, GNOME's blue, pass both.
 
 ## Custom stylesheet
 
@@ -140,6 +141,7 @@ All four are optional hex colors, 3 or 6 digits. Write them without `#`, or with
 - Without `logo`, FrogPak looks for `logo.svg`, then `logo.png`, at the repository root, and likewise `logo-dark.svg` and `logo-dark.png`. With neither, the FrogPak logo is used.
 - Wide logos are fine on the page; they are scaled, never stretched. The favicon is made from the logo unless `favicon` is set, so a wide logo produces a warning suggesting a square `favicon`.
 - URLs are fetched at every publish. If one cannot be fetched, the publish continues with the default and a warning. SVGs from URLs are published as PNG images.
+- Changing a logo, favicon or `css` file in the repository republishes the page at the next check, even when `pond.yml` itself is unchanged. A file behind a URL is not watched: a change there shows at the next publish, or use **Run workflow** with *Rebuild even if nothing changed*.
 
 ## Shared links
 

@@ -67,16 +67,18 @@ def survey(config):
     return states
 
 
-def fingerprint(config, states, engine_version, social=None):
+def fingerprint(config, states, engine_version, social=None, files=None):
     """What a publish depends on. A difference from the published copy means the Pond is out of date.
 
-    social identifies the shared-link image, from social.identity.
+    social identifies the shared-link image, from social.identity; files the logos, favicon
+    and stylesheet, from images.identities.
     """
     config_text = config.path.read_bytes() if config.path and config.path.exists() else b""
     return {
         "engine": engine_version,
         "config": hashlib.sha256(config_text).hexdigest(),
         "social": social,
+        "files": files,
         "apps": {
             s.app.id: {
                 "repo": s.app.repo,

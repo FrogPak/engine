@@ -50,7 +50,8 @@ def cmd_poll(args):
     cfg = config.load(config.find(args.config, warn=False))
     # Quiet: publish warns if the image cannot be looked up, and poll runs every hour.
     image = social.identity(social.source(cfg.pond, warn=False), ".")
-    current = _normalize(fetch.fingerprint(cfg, fetch.survey(cfg), __version__, image))
+    current = _normalize(fetch.fingerprint(cfg, fetch.survey(cfg), __version__, image,
+                                           images.identities(cfg.pond, ".")))
     url = _base_url(args.base_url) + site.STATE_FILE
     try:
         # The query string sidesteps the Pages CDN cache, which holds files for ten minutes.
@@ -170,7 +171,8 @@ def cmd_publish(args):
     image_source = social.source(pond)
     social_name = social.write(out, image_source, args.pond_dir)
 
-    fingerprint = fetch.fingerprint(cfg, states, __version__, social.identity(image_source, args.pond_dir))
+    fingerprint = fetch.fingerprint(cfg, states, __version__, social.identity(image_source, args.pond_dir),
+                                    images.identities(pond, args.pond_dir))
     # The publish time is shown on the page but kept out of the fingerprint, so it never
     # makes a Pond look out of date by itself.
     site.write(out, pond, base_url, args.source_url, entries, logo_name, dark_name, has_svg, fingerprint,

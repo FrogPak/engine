@@ -4,7 +4,6 @@ pond.social-image, when set, is used. Otherwise, on GitHub, the image uploaded a
 repository's social preview (Settings > General > Social preview). Without either,
 the page offers the Pond's icon, which apps show as a small card.
 """
-import hashlib
 import os
 from pathlib import Path
 from urllib.parse import urlparse
@@ -60,12 +59,7 @@ def identity(spec, pond_dir):
     """What poll compares for the image from source(), so a new image republishes the page.
     A file is identified by its contents, a URL by itself: GitHub gives each uploaded image
     a new address."""
-    if not spec or spec.startswith("https://"):
-        return spec
-    try:
-        return hashlib.sha256((Path(pond_dir) / spec).read_bytes()).hexdigest()
-    except OSError:
-        return None
+    return images.identity(spec, pond_dir)
 
 
 def write(site, spec, pond_dir):

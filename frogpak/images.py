@@ -1,5 +1,6 @@
 """Resolves the Pond's logo and favicon and renders the PNG sizes browsers and software centers need."""
 import base64
+import hashlib
 import re
 import struct
 import subprocess
@@ -72,6 +73,33 @@ def _load(spec, pond_dir, fallback="using the default"):
         log.warning(f"{spec}: not an SVG or PNG image; {fallback}")
         return None
     return Image(data, kind, spec, external)
+
+
+def identity(spec, pond_dir):
+    """What poll compares for a file the page uses, so changing it republishes: a repository
+    file by its contents, a URL by itself. None for no file, or one that cannot be read."""
+    if not spec or spec.startswith(("https://", "http://")):
+        return spec or None
+    base = Path(pond_dir).resolve()
+    path = (base / spec).resolve()
+    if base not in path.parents:
+        return None
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+def identities(pond, pond_dir):
+    """identity() for each file the landing page is built from, including the logo.svg
+    or logo.png found at the root when pond.logo is not set."""
+    specs = {
+        "logo": pond.logo or _find_default(pond_dir, "logo"),
+        "logo-dark": pond.logo_dark or _find_default(pond_dir, "logo-dark"),
+        "favicon": pond.favicon,
+        "css": pond.css,
+    }
+    return {key: identity(spec, pond_dir) for key, spec in specs.items()}
 
 
 def _find_default(pond_dir, stem):

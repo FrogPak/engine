@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.4
+
+- Changing a logo, dark logo, favicon or stylesheet file republishes the page at the next check. Before, only changes to `pond.yml` and to apps' releases did, so a new logo waited for one of those or a forced rebuild. Files behind URLs are not watched.
+- The accent's contrast against code blocks is checked against 3:1, the level for icons, since there it only colors the copy button's icon; the page and cards still need 4.5:1. Accents that were readable everywhere except code blocks, such as GNOME's blue, no longer warn.
+
 ## 1.1.3
 
 - Shared links to a Pond's page show a card: the page has Open Graph and Twitter tags with the Pond's title, subtitle and an image. The image is the new `social-image` setting, or else the repository's uploaded social preview image, or else the Pond's icon. A new image republishes the page at the next hourly check.
