@@ -1,4 +1,5 @@
 import json
+import shutil
 import tempfile
 import unittest
 import xml.dom.minidom
@@ -30,6 +31,7 @@ class BadgeTests(unittest.TestCase):
         dark = badges.version_badge("P", "v1", "#1c71d8", "t")
         self.assertIn(f'fill="{theme.WHITE}">v1', dark)
 
+    @unittest.skipUnless(shutil.which("rsvg-convert"), "needs rsvg-convert")
     def test_write_makes_buttons_and_one_badge_per_app(self):
         logo = images.Image((images.DATA / "default-logo.svg").read_bytes(), "svg", "default")
         entries = [{"id": "org.example.Notes", "version": "1.2.0"}, {"id": "org.example.Paint", "version": ""}]

@@ -1,3 +1,4 @@
+import shutil
 import tempfile
 import unittest
 from unittest import mock
@@ -79,6 +80,7 @@ class ImageTests(unittest.TestCase):
         self.assertEqual((logos.favicon.origin, logos.icon.origin, logos.badge.origin),
                          ("icon.png", "square.svg", "square.svg"))
 
+    @unittest.skipUnless(shutil.which("rsvg-convert"), "needs rsvg-convert")
     def test_favicon_override_leaves_the_remote_icon_alone(self):
         square = images.Image(SVG_SQUARE.replace(b"/>", b' fill="#ff0000"/>'), "svg", "square")
         favicon = images.Image(SVG_SQUARE.replace(b"/>", b' fill="#0000ff"/>'), "svg", "favicon")
