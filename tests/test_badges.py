@@ -1,3 +1,4 @@
+import dataclasses
 import json
 import shutil
 import tempfile
@@ -47,6 +48,18 @@ class BadgeTests(unittest.TestCase):
             self.assertIn(">available<", (Path(site) / names["org.example.Paint"]).read_text())
             self.assertEqual(sorted(p.name for p in (Path(site) / "badges").iterdir()),
                              ["button-dark.svg", "button-light.svg", "org.example.Notes.svg", "org.example.Paint.svg"])
+
+    @unittest.skipUnless(shutil.which("rsvg-convert"), "needs rsvg-convert")
+    def test_version_badges_use_the_accent_of_the_starting_appearance(self):
+        logo = images.Image((images.DATA / "default-logo.svg").read_bytes(), "svg", "default")
+        entries = [{"id": "org.example.Notes", "version": "1.0"}]
+        colors = {"accent": "#1a5f2a", "accent-dark": "#a6e22e"}
+        for mode, expected in (("light", "#1a5f2a"), ("system", "#1a5f2a"), ("dark", "#a6e22e")):
+            p = dataclasses.replace(pond(theme_colors=colors), mode=mode)
+            with tempfile.TemporaryDirectory() as site:
+                made = badges.write(site, p, entries, logo, logo)
+                svg = (Path(site) / made.versions["org.example.Notes"]).read_text()
+            self.assertIn(f'fill="{expected}"', svg, mode)
 
     def test_snippets_link_to_the_pond_or_the_app_and_escape_alt_text(self):
         p = pond('My [Best] "Apps"')

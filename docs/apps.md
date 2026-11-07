@@ -61,7 +61,7 @@ The token can only start the Pond's workflows. A Pond owned by an organization m
 Every Pond publishes badges that help people find its apps, with a page to copy them from at the Pond's address followed by `badges/`, such as `https://frogpak.org/demo/badges/`. The landing page does not link to it; each publish run's summary does.
 
 - **Button:** "Get it on" and the Pond's name, with its icon, in a light and a dark version. The page has it as HTML, which switches between the two with GitHub's appearance, and as Markdown with the light version.
-- **Version badges:** the Pond's name and the version of the app it publishes, in the Pond's accent color, one per app. The page has each as Markdown, linking to the app's card.
+- **Version badges:** the Pond's name and the version of the app it publishes, one per app, in the accent color of the appearance the Pond's page starts in: `accent-dark` when `theme.mode` is `dark`, otherwise `accent`. The page has each as Markdown, linking to the app's card.
 
 Badges are rebuilt with every publish, so a version badge always shows the version the Pond serves. Their addresses never change, so they can also be written by hand:
 

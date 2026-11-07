@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1
+
+- Version badges use `accent-dark` when the Pond's `theme.mode` is `dark`, matching the page's starting appearance. Their text color is still picked to contrast with it. Other modes keep `accent`.
+
 ## 1.2.0
 
 - Badges for app READMEs. Each Pond publishes a "Get it on <Pond>" button in light and dark, and a version badge for each app in the Pond's accent color, at fixed addresses under `badges/`. A badges page at `badges/` shows them with snippets to copy, apps in the landing page's order; the landing page does not link to it. Each publish run's summary links to it, and `apps.json` lists the badge addresses. Badges link to the Pond's page or the app's card, and their alt and hover text read "<Pond>, published with FrogPak".

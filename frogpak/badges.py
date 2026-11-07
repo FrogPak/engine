@@ -123,7 +123,9 @@ def write(site, pond, entries, icon, icon_dark):
     pngs["dark"] = pngs["light"] if icon_dark is icon else _icon_png(icon_dark, out)
     for mode, path in (("light", BUTTON_LIGHT), ("dark", BUTTON_DARK)):
         (Path(site) / path).write_text(button(pond.title, pngs[mode], BUTTONS[mode], title))
-    accent = theme.palettes(pond.theme)[0]["accent"]
+    # The accent of the appearance the landing page starts in; its text color is picked to contrast.
+    light, dark = theme.palettes(pond.theme)
+    accent = (dark if pond.mode == "dark" else light)["accent"]
     made = Made(button_width(pond.title))
     for entry in entries:
         name = f"{DIR}/{entry['id']}.svg"
