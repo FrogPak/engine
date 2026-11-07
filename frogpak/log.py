@@ -30,3 +30,11 @@ def warning(message):
 
 def error(message):
     _emit("error", message)
+
+
+def summary(markdown):
+    """Adds Markdown to the workflow run's summary page; does nothing outside GitHub Actions."""
+    path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if path:
+        with open(path, "a") as out:
+            out.write(markdown.rstrip("\n") + "\n")

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0
+
+- Badges for app READMEs. Each Pond publishes a "Get it on <Pond>" button in light and dark, and a version badge for each app in the Pond's accent color, at fixed addresses under `badges/`. A badges page at `badges/` shows them with snippets to copy, apps in the landing page's order; the landing page does not link to it. Each publish run's summary links to it, and `apps.json` lists the badge addresses. Badges link to the Pond's page or the app's card, and their alt and hover text read "<Pond>, published with FrogPak".
+- Each app's card on the landing page has the app ID as its anchor, such as `#org.example.Notes`, so links can go straight to it.
+- The copy button for an app's `flatpak install` command shows for every app. Before, it only showed when the app's source was on GitHub.
+- Logos by shape: `logo-square` is the Pond's icon for the browser tab, the remote and the badge button, and `logo-wide` is a logo with the Pond's name in it, shown in place of the landing page's title. Each has a `-dark` version. `logo` and `logo-dark` still work as `logo-square` and `logo-square-dark`, with a notice, until 2.0. `favicon` now overrides only the icon browsers show; the remote's icon comes from the square logo. See [Logos](docs/configuration.md#logos-and-favicon).
+- Every Pond republishes once after upgrading, to add the badges.
+
 ## 1.1.6
 
 - A new `include` setting lists more files of apps, such as one per developer. Each holds an `apps:` section like `pond.yml`'s. Editing one republishes the Pond at the next check.

@@ -12,11 +12,13 @@ from . import http, log
 DATA = Path(__file__).parent / "data"
 MAX_BYTES = 2 * 1024 * 1024
 SQUARE_TOLERANCE = 1.25
-# Square PNGs written to the site; ICON is also the Icon of index.flatpakrepo.
+# Square PNGs written to the site. Browsers use the favicon sizes, which pond.favicon can override;
+# the icon sizes are the Pond's own, and ICON is also the Icon of index.flatpakrepo.
 FAVICON = "favicon-32.png"
 TOUCH_ICON = "apple-touch-icon.png"
 ICON = "icon-256.png"
-PNG_SIZES = {FAVICON: 32, TOUCH_ICON: 180, "icon-192.png": 192, ICON: 256}
+FAVICON_SIZES = {FAVICON: 32, TOUCH_ICON: 180}
+ICON_SIZES = {"icon-192.png": 192, ICON: 256}
 
 
 @dataclass
@@ -90,18 +92,6 @@ def identity(spec, pond_dir):
         return None
 
 
-def identities(pond, pond_dir):
-    """identity() for each file the landing page is built from, including the logo.svg
-    or logo.png found at the root when pond.logo is not set."""
-    specs = {
-        "logo": pond.logo or _find_default(pond_dir, "logo"),
-        "logo-dark": pond.logo_dark or _find_default(pond_dir, "logo-dark"),
-        "favicon": pond.favicon,
-        "css": pond.css,
-    }
-    return {key: identity(spec, pond_dir) for key, spec in specs.items()}
-
-
 def _find_default(pond_dir, stem):
     for ext in (".svg", ".png"):
         path = Path(pond_dir) / f"{stem}{ext}"
@@ -110,29 +100,79 @@ def _find_default(pond_dir, stem):
     return None
 
 
+@dataclass
+class Logos:
+    """Which image goes where. The header is the wide logo when there is one, else the square one."""
+    header: Image
+    header_dark: Image | None
+    wide: bool
+    favicon: Image
+    icon: Image
+    badge: Image
+    badge_dark: Image
+
+
+def _specs(pond, pond_dir):
+    """The file for each logo role: the key, its deprecated stand-in, then a file found at the root.
+    Dark versions are looked for at the root only when their light version is the Pond's own."""
+    square = pond.logo_square or pond.logo or _find_default(pond_dir, "logo-square") or _find_default(pond_dir, "logo")
+    wide = pond.logo_wide or _find_default(pond_dir, "logo-wide")
+    return {
+        "logo-square": square,
+        "logo-square-dark": pond.logo_square_dark or pond.logo_dark or (
+            (_find_default(pond_dir, "logo-square-dark") or _find_default(pond_dir, "logo-dark")) if square else None),
+        "logo-wide": wide,
+        "logo-wide-dark": pond.logo_wide_dark or (_find_default(pond_dir, "logo-wide-dark") if wide else None),
+        "favicon": pond.favicon,
+    }
+
+
+def _deprecations(pond, pond_dir):
+    if pond.logo:
+        log.notice("pond.logo is deprecated; rename it to logo-square, or use logo-wide for a logo with the "
+                   "Pond's name in it")
+    if pond.logo_dark:
+        log.notice("pond.logo-dark is deprecated; rename it to logo-square-dark, or use logo-wide-dark")
+    for old, new in (("logo", "logo-square"), ("logo-dark", "logo-square-dark")):
+        found = _find_default(pond_dir, old)
+        if found and not getattr(pond, new.replace("-", "_")) and not _find_default(pond_dir, new):
+            log.notice(f"{found} is still used, but the name is deprecated; rename it to {new}{Path(found).suffix}")
+
+
 def resolve(pond, pond_dir):
-    """Returns (logo, dark logo or None, favicon source)."""
-    logo = None
-    spec = pond.logo or _find_default(pond_dir, "logo")
-    if spec:
-        logo = _load(spec, pond_dir)
-    custom = logo is not None
-    if logo is None:
-        logo = Image((DATA / "default-logo.svg").read_bytes(), "svg", "FrogPak default logo")
+    """Loads the Pond's logos and decides where each is used; returns a Logos."""
+    _deprecations(pond, pond_dir)
+    specs = _specs(pond, pond_dir)
+    square = _load(specs["logo-square"], pond_dir) if specs["logo-square"] else None
+    wide = _load(specs["logo-wide"], pond_dir, "no wide logo") if specs["logo-wide"] else None
+    square_dark = (_load(specs["logo-square-dark"], pond_dir, "no dark square logo")
+                   if square and specs["logo-square-dark"] else None)
+    wide_dark = (_load(specs["logo-wide-dark"], pond_dir, "no dark wide logo")
+                 if wide and specs["logo-wide-dark"] else None)
+    if square is None and wide is None:
+        square = Image((DATA / "default-logo.svg").read_bytes(), "svg", "FrogPak default logo")
 
-    dark = None
-    spec = pond.logo_dark or (_find_default(pond_dir, "logo-dark") if custom else None)
-    if spec:
-        dark = _load(spec, pond_dir, "no dark logo")
-
-    favicon = _load(pond.favicon, pond_dir, "using the logo") if pond.favicon else None
-    if favicon is None:
-        favicon = logo
-        ratio = aspect(logo)
+    if square is None:
+        log.warning("pond.logo-square is not set, so the favicon, the remote's icon and the badge button may use "
+                    f"{wide.origin} shrunk to a square. Set pond.logo-square to a square version of the logo.")
+    else:
+        ratio = aspect(square)
         if ratio and ratio > SQUARE_TOLERANCE:
-            log.warning(f"{logo.origin} is not square ({ratio:.2f}:1); the favicon may look poor. "
-                        "Set pond.favicon to a square image.")
-    return logo, dark, favicon
+            log.warning(f"{square.origin} is not square ({ratio:.2f}:1), so the favicon, the remote's icon and the "
+                        "badge button may look poor. Use a square image for pond.logo-square.")
+
+    favicon = _load(pond.favicon, pond_dir, "using the square logo") if pond.favicon else None
+    icon = square or wide
+    icon_dark = (square_dark or square) if square else (wide_dark or wide)
+    return Logos(header=wide or square, header_dark=wide_dark if wide else square_dark, wide=wide is not None,
+                 favicon=favicon or icon, icon=icon, badge=icon, badge_dark=icon_dark)
+
+
+def identities(pond, pond_dir):
+    """identity() for each file the landing page is built from, including logos found at the root."""
+    specs = _specs(pond, pond_dir)
+    specs["css"] = pond.css
+    return {key: identity(spec, pond_dir) for key, spec in specs.items()}
 
 
 def _length(value):
@@ -209,12 +249,15 @@ def write_logo(image, site, stem):
     return name
 
 
-def write_icons(image, site):
+def write_icons(favicon, icon, site):
+    """Writes the browser icons from favicon and the Pond's icons from icon; returns whether
+    favicon.svg was written."""
     site = Path(site)
-    for name, side in PNG_SIZES.items():
-        render_png(_square_svg(image, side), site / name, side, side)
-    ratio = aspect(image)
-    if image.kind == "svg" and not image.external and ratio and ratio < 1.01:
-        (site / "favicon.svg").write_bytes(image.data)
+    for image, sizes in ((favicon, FAVICON_SIZES), (icon, ICON_SIZES)):
+        for name, side in sizes.items():
+            render_png(_square_svg(image, side), site / name, side, side)
+    ratio = aspect(favicon)
+    if favicon.kind == "svg" and not favicon.external and ratio and ratio < 1.01:
+        (site / "favicon.svg").write_bytes(favicon.data)
         return True
     return False

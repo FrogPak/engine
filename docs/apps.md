@@ -47,3 +47,21 @@ The token can only start the Pond's workflows. A Pond owned by an organization m
 - Each bundle must contain the app ID and architecture its Pond entry expects; others are skipped.
 - Bundles should be built with `flatpak build-bundle --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo`, so installing an app also finds its runtime.
 - Metainfo in the app gives the Pond its name, summary and version, and software centers their screenshots and release notes. Without it, the Pond uses the repository description and the release tag.
+
+## Badges
+
+Every Pond publishes badges that help people find its apps, with a page to copy them from at the Pond's address followed by `badges/`, such as `https://frogpak.org/demo/badges/`. The landing page does not link to it; each publish run's summary does.
+
+- **Button:** "Get it on" and the Pond's name, with its icon, in a light and a dark version. The page has it as HTML, which switches between the two with GitHub's appearance, and as Markdown with the light version.
+- **Version badges:** the Pond's name and the version of the app it publishes, in the Pond's accent color, one per app. The page has each as Markdown, linking to the app's card.
+
+Badges are rebuilt with every publish, so a version badge always shows the version the Pond serves. Their addresses never change, so they can also be written by hand:
+
+| File | Address |
+| --- | --- |
+| Button, light | `<Pond address>badges/button-light.svg` |
+| Button, dark | `<Pond address>badges/button-dark.svg` |
+| Version badge | `<Pond address>badges/<app ID>.svg` |
+| An app's card, to link to | `<Pond address>#<app ID>` |
+
+`apps.json` lists the same addresses, under `badges` and each app's `badge`.

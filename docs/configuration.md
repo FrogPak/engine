@@ -10,9 +10,9 @@ pond:
   subtitle: Apps by Alex
   remote: alex
   arches: [x86_64, aarch64]
-  logo: assets/logo.svg
-  logo-dark: assets/logo-dark.svg
-  favicon: assets/icon.svg
+  logo-square: assets/logo-square.svg
+  logo-wide: assets/logo-wide.svg
+  logo-wide-dark: assets/logo-wide-dark.svg
   theme:
     accent: 1c7a4f
     background: f6f5f4
@@ -34,9 +34,11 @@ apps:
 | `subtitle` | no | One line under the title |
 | `remote` | yes | Name people use for the remote: lowercase letters, digits and hyphens |
 | `arches` | no | Architectures to publish; default `[x86_64, aarch64]` |
-| `logo` | no | Logo for the landing page; see [Logos](#logos-and-favicon) |
-| `logo-dark` | no | Logo used when the page is in dark mode |
-| `favicon` | no | Square image for the browser tab and the remote's icon |
+| `logo-square` | recommended | Square logo: the browser tab, the remote's icon and the badge button, and the landing page header when there is no wide logo. See [Logos](#logos-and-favicon) |
+| `logo-square-dark` | no | The square logo for dark mode |
+| `logo-wide` | no | A logo with the Pond's name in it; shown in place of the title on the landing page |
+| `logo-wide-dark` | no | The wide logo for dark mode |
+| `favicon` | no | Overrides the browser tab's icon only |
 | `theme` | no | Colors, and whether the page starts in light or dark mode; see [Theme](#theme) |
 | `css` | no | Your own stylesheet, a repository path or `https://` URL, loaded after FrogPak's styles |
 | `social-image` | no | Image shown when the page's link is shared; default: the repository's social preview image. See [Shared links](#shared-links) |
@@ -181,9 +183,27 @@ Rules for dark mode should follow the page's mode, not only the system's, so tha
 
 ## Logos and favicon
 
-- `logo`, `logo-dark` and `favicon` take a path inside the repository or an `https://` URL. SVG and PNG are accepted; SVG is preferred.
-- Without `logo`, FrogPak looks for `logo.svg`, then `logo.png`, at the repository root, and likewise `logo-dark.svg` and `logo-dark.png`. With neither, the FrogPak logo is used.
-- Wide logos are fine on the page; they are scaled, never stretched. The favicon is made from the logo unless `favicon` is set, so a wide logo produces a warning suggesting a square `favicon`.
+A Pond has up to two logos, each with an optional version for dark mode:
+
+- **`logo-square`**, recommended, is the Pond's icon: the browser tab, the icon software centers show for the remote, and the badge button. Without a wide logo it is also the landing page's logo, next to the title. A publish warns when it is further from square than 1.25:1.
+- **`logo-wide`** is for a logo that already contains the Pond's name, such as a wordmark. It replaces the landing page's logo and title, so the name is not shown twice; the title stays in the page for screen readers and search engines. Without `logo-square`, the wide logo is shrunk to a square for the icons, with a warning; set `logo-square` to fix it.
+- **`logo-square-dark`** and **`logo-wide-dark`** are used when the page is in dark mode, and for the dark badge button.
+- **`favicon`** overrides only the icon browsers show, in the tab and when the page is added to a phone's home screen.
+
+| Set | Landing page | Browser tab, remote's icon | Badge button |
+| --- | --- | --- | --- |
+| `logo-square` and `logo-wide` | wide logo | square logo | square logo |
+| `logo-square` only | square logo and title | square logo | square logo |
+| `logo-wide` only | wide logo | wide logo, shrunk (warning) | wide logo, shrunk |
+| neither | FrogPak logo and title | FrogPak logo | FrogPak logo |
+
+`favicon`, when set, replaces the browser tab's icon in every row.
+
+All of them take a path inside the repository or an `https://` URL. SVG and PNG are accepted; SVG is preferred. Logos are scaled, never stretched.
+
+Without the keys, FrogPak looks at the repository root for `logo-square.svg`, `logo-square-dark.svg`, `logo-wide.svg` and `logo-wide-dark.svg`, and the same names ending in `.png`.
+
+Before 1.2.0 the keys were `logo` and `logo-dark`, and the files `logo.svg` and `logo-dark.svg`. They still work as `logo-square` and `logo-square-dark`, with a notice in each run, until FrogPak 2.0. Setting both an old key and its new one is an error.
 - URLs are fetched at every publish. If one cannot be fetched, the publish continues with the default and a warning. SVGs from URLs are published as PNG images.
 - Changing a logo, favicon or `css` file in the repository republishes the page at the next check, even when `pond.yml` itself is unchanged. A file behind a URL is not watched: a change there shows at the next publish, or use **Run workflow** with *Rebuild even if nothing changed*.
 

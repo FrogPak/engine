@@ -40,7 +40,7 @@ class IdentityTests(unittest.TestCase):
         (self.root / "logo.svg").write_bytes(b"<svg/>")
         (self.root / "style.css").write_text("a{}")
         found = images.identities(pond, self.root)
-        self.assertEqual(found["logo"], hashlib.sha256(b"<svg/>").hexdigest())
+        self.assertEqual(found["logo-square"], hashlib.sha256(b"<svg/>").hexdigest())
         self.assertEqual(found["css"], hashlib.sha256(b"a{}").hexdigest())
         self.assertIsNone(found["favicon"])
 

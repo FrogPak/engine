@@ -8,7 +8,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import __version__, config, fetch, http, images, licenses, log, repo, site, social, sources
+from . import __version__, badges, config, fetch, http, images, licenses, log, repo, site, social, sources
 
 
 def _base_url(value):
@@ -123,10 +123,10 @@ def cmd_publish(args):
             app_refs.setdefault(state.app.id, []).append(ref)
     repo.update(out, key, pond.title, pond.subtitle or pond.title)
 
-    logo, dark, favicon = images.resolve(pond, args.pond_dir)
-    logo_name = images.write_logo(logo, out, "logo")
-    dark_name = images.write_logo(dark, out, "logo-dark") if dark else None
-    has_svg = images.write_icons(favicon, out)
+    logos = images.resolve(pond, args.pond_dir)
+    logo_name = images.write_logo(logos.header, out, "logo")
+    dark_name = images.write_logo(logos.header_dark, out, "logo-dark") if logos.header_dark else None
+    has_svg = images.write_icons(logos.favicon, logos.icon, out)
     repo.write_repo_file(out, pond, base_url, key, base_url + images.ICON)
 
     entries = []
@@ -175,11 +175,15 @@ def cmd_publish(args):
                                     images.identities(pond, args.pond_dir))
     # The publish time is shown on the page but kept out of the fingerprint, so it never
     # makes a Pond look out of date by itself.
+    made_badges = badges.write(out, pond, entries, logos.badge, logos.badge_dark)
     site.write(out, pond, base_url, args.source_url, entries, logo_name, dark_name, has_svg, fingerprint,
-               custom_css, updated=_now(), social_name=social_name)
+               custom_css, updated=_now(), social_name=social_name, made_badges=made_badges,
+               wide_logo=logos.wide)
     if not size_guard(out, bundles):
         return 1
     log.info(f"Published {len(entries)} of {len(cfg.apps)} app(s) to {out}")
+    if entries:
+        log.summary(f"README badges for this Pond's apps: {base_url}{badges.PAGE}")
     if cfg.apps and not entries:
         log.warning("No apps could be published")
     return 0

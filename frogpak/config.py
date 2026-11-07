@@ -18,8 +18,10 @@ DEFAULT_ASSETS = "{app_id}-{arch}.flatpak"
 FORGES = ("github", "forgejo", "gitea", "gitlab")
 PLACEHOLDERS = {"app_id", "name", "arch"}
 
-POND_KEYS = {"title", "subtitle", "remote", "arches", "logo", "logo-dark", "favicon", "theme", "css",
-             "social-image", "order"}
+POND_KEYS = {"title", "subtitle", "remote", "arches", "logo-square", "logo-square-dark", "logo-wide",
+             "logo-wide-dark", "logo", "logo-dark", "favicon", "theme", "css", "social-image", "order"}
+# Deprecated keys and the key each one stands in for when that key is not set.
+DEPRECATED_KEYS = {"logo": "logo-square", "logo-dark": "logo-square-dark"}
 # How the landing page lists apps; the first is the default.
 ORDERS = ("listed", "name", "newest", "app-id")
 THEME_KEYS = ("mode", "accent", "accent-dark", "background", "background-dark")
@@ -68,8 +70,16 @@ class Pond:
     remote: str
     subtitle: str = ""
     arches: tuple = DEFAULT_ARCHES
+    # The square logo: the favicon, the remote's icon and the badge button, and the header without a wide logo.
+    logo_square: str | None = None
+    logo_square_dark: str | None = None
+    # A logo with the Pond's name in it; when set it replaces the header's logo and title.
+    logo_wide: str | None = None
+    logo_wide_dark: str | None = None
+    # Deprecated stand-ins for logo_square and logo_square_dark.
     logo: str | None = None
     logo_dark: str | None = None
+    # Overrides only the icon browsers show; the remote's icon stays the square logo.
     favicon: str | None = None
     theme: dict = field(default_factory=dict)
     css: str | None = None
@@ -208,8 +218,12 @@ def parse(text, path=CONFIG_NAME):
             clean_arches.append(arch)
 
     images = {}
-    for key in ("logo", "logo-dark", "favicon", "css", "social-image"):
+    for key in ("logo-square", "logo-square-dark", "logo-wide", "logo-wide-dark", "logo", "logo-dark", "favicon",
+                "css", "social-image"):
         images[key] = _string(pond_data.get(key), f"pond.{key}", problems)
+    for old, new in DEPRECATED_KEYS.items():
+        if images[old] and images[new]:
+            problems.append(f"pond.{old} and pond.{new} are both set; pond.{old} is the old name, so remove it")
 
     theme = {}
     mode = MODES[0]
@@ -241,6 +255,8 @@ def parse(text, path=CONFIG_NAME):
     if problems:
         raise ConfigError(path, problems)
     pond = Pond(title=title, remote=remote, subtitle=subtitle, arches=tuple(clean_arches),
+              logo_square=images["logo-square"], logo_square_dark=images["logo-square-dark"],
+              logo_wide=images["logo-wide"], logo_wide_dark=images["logo-wide-dark"],
               logo=images["logo"], logo_dark=images["logo-dark"], favicon=images["favicon"],
               theme=theme, css=images["css"], social_image=images["social-image"], order=order, mode=mode)
     return Config(pond=pond, apps=tuple(apps), path=Path(path), include=include)

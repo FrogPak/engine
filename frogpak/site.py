@@ -4,7 +4,7 @@ import json
 from urllib.parse import urlparse
 from pathlib import Path
 
-from . import config, images, licenses, theme
+from . import badges, config, images, licenses, theme
 
 STATE_FILE = "apps.json"
 GITHUB_MARK = (
@@ -54,6 +54,8 @@ h1 {{ font-size: 1.75rem; margin: 0; }}
 .top-end {{ display: flex; align-items: center; gap: 1rem; margin-left: auto; }}
 .brand {{ display: flex; align-items: center; gap: .75rem; min-width: 0; }}
 .brand img {{ height: 44px; width: auto; max-width: 10rem; object-fit: contain; flex: none; }}
+/* A wide logo carries the Pond's name, so it gets the room the title would have had. */
+.brand.wide img {{ height: 48px; max-width: min(24rem, 100%); }}
 .mark {{ vertical-align: -2px; margin-right: .3rem; }}
 h2 {{ font-size: 1.15rem; margin: 2rem 0 .75rem; }}
 .apps-head {{
@@ -163,7 +165,7 @@ footer {{ margin-top: 3rem; font-size: .85rem; color: var(--muted); text-align: 
 <body>
 <main>
 <div class="top">
-<div class="brand">{logo}<h1>{title}</h1></div>
+<div class="brand{brand_class}">{logo}<h1{title_class}>{title}</h1></div>
 <div class="top-end">{source}{mode_picker}</div>
 </div>
 {subtitle}
@@ -296,7 +298,8 @@ COPY_BUTTON = (
 CHEVRON = ('<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" '
            'stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>')
 
-APP = """<div class="card app" data-arches="{arches}">
+# The app ID anchors the card, so README badges can link straight to it.
+APP = """<div class="card app" id="{app_id}" data-arches="{arches}">
 <div class="icon">{icon}</div>
 <div class="body">
 <div class="head">
@@ -318,6 +321,149 @@ APP = """<div class="card app" data-arches="{arches}">
 <div class="links">{links}</div>
 </div>
 </div>"""
+# The badges page is for app developers, so the landing page does not link to it. It follows
+# the appearance a visitor chose on the landing page, which shares its origin and storage key.
+BADGES_PAGE = """<!doctype html>
+<html lang="en"{mode_attr}>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<script>
+try {{
+  const mode = localStorage.getItem("frogpak-mode");
+  if (mode === "system") delete document.documentElement.dataset.mode;
+  else if (mode === "light" || mode === "dark") document.documentElement.dataset.mode = mode;
+}} catch (error) {{}}
+</script>
+<title>Badges · {title}</title>
+<link rel="icon" type="image/png" sizes="32x32" href="../{favicon}">
+<style>
+:root {{ {light} color-scheme: light; }}
+:root[data-mode="dark"] {{ {dark} color-scheme: dark; }}
+@media (prefers-color-scheme: dark) {{
+  :root:not([data-mode="light"]) {{ {dark} color-scheme: dark; }}
+}}
+* {{ box-sizing: border-box; }}
+body {{
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.5 system-ui, -apple-system, "Cantarell", "Segoe UI", sans-serif;
+}}
+main {{ max-width: 44rem; margin: 0 auto; padding: 2rem 1rem 4rem; }}
+h1 {{ font-size: 1.75rem; margin: .5rem 0; }}
+h2 {{ font-size: 1.15rem; margin: 2rem 0 .75rem; }}
+h3 {{ font-size: 1rem; margin: 0 0 .5rem; }}
+p {{ margin: 0 0 1rem; color: var(--muted); }}
+a {{ color: var(--accent); }}
+.card {{
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 1rem; margin-bottom: .75rem;
+}}
+.card p {{ font-size: .85rem; margin: .75rem 0 .35rem; }}
+.card > img {{ margin-bottom: .6rem; }}
+.swatches {{ display: flex; flex-wrap: wrap; gap: .75rem; }}
+/* The button is shown on GitHub's own light and dark backgrounds, whatever this page's appearance. */
+.swatch {{ border-radius: 8px; padding: .75rem; border: 1px solid var(--border); }}
+.swatch.light {{ background: #ffffff; }}
+.swatch.dark {{ background: #0d1117; }}
+img {{ display: block; max-width: 100%; height: auto; }}
+code {{ font: .85rem ui-monospace, "Source Code Pro", monospace; }}
+.cmd {{
+  display: flex; align-items: flex-start; gap: .5rem; background: var(--code);
+  border-radius: 8px; padding: .5rem .75rem;
+}}
+.cmd code {{ flex: 1; min-width: 0; overflow-wrap: anywhere; }}
+.cmd button {{
+  flex: none; display: grid; place-items: center; width: 2rem; height: 2rem; margin: -.25rem -.4rem -.25rem 0;
+  color: var(--accent); background: none; border: none; border-radius: 6px; cursor: pointer;
+}}
+.cmd button:hover {{ background: var(--card); }}
+.cmd button svg {{ width: 1.25rem; height: 1.25rem; }}
+.cmd button .done, .cmd button.copied .copy {{ display: none; }}
+.cmd button.copied .done {{ display: block; }}
+.visually-hidden {{
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}}
+footer {{ margin-top: 3rem; font-size: .85rem; color: var(--muted); text-align: center; }}
+</style>
+</head>
+<body>
+<main>
+<a href="../">← {title}</a>
+<h1>Badges</h1>
+<p>Help people find your app on {title}: add a badge to its README, website or release notes. Badges update with every publish.</p>
+
+<h2>Get it on {title}</h2>
+<div class="card">
+<div class="swatches"><div class="swatch light"><img src="{button_light}" alt="{alt}" width="{button_width}" height="48"></div><div class="swatch dark"><img src="{button_dark}" alt="{alt}" width="{button_width}" height="48"></div></div>
+<p>As HTML, which switches between the light and dark button with GitHub's appearance:</p>
+<div class="cmd"><code>{button_html}</code>{copy}</div>
+<p>As Markdown, with the light button only:</p>
+<div class="cmd"><code>{button_md}</code>{copy}</div>
+<p>Both link to this Pond's page. To link to your app instead, add <code>#</code> and the app ID to the end of the link.</p>
+</div>
+
+<h2>Version badges</h2>
+<p>Each shows the version of the app this Pond publishes, and links to the app.</p>
+{apps}
+<footer>Published with <a href="https://github.com/FrogPak/engine">FrogPak</a></footer>
+</main>
+<script>
+for (const button of document.querySelectorAll(".cmd button")) {{
+  const label = button.querySelector(".visually-hidden");
+  button.addEventListener("click", async () => {{
+    const code = button.parentElement.querySelector("code");
+    try {{
+      await navigator.clipboard.writeText(code.textContent);
+      button.classList.add("copied");
+      label.textContent = "Copied";
+    }} catch (error) {{
+      // No clipboard access: select the snippet so it can be copied by hand.
+      const range = document.createRange();
+      range.selectNodeContents(code);
+      getSelection().removeAllRanges();
+      getSelection().addRange(range);
+      label.textContent = "Selected; copy it with your keyboard";
+    }}
+    setTimeout(() => {{ button.classList.remove("copied"); label.textContent = "Copy"; }}, 2000);
+  }});
+}}
+</script>
+</body>
+</html>
+"""
+BADGE_CARD = """<div class="card">
+<h3>{name}</h3>
+<img src="{badge}" alt="{alt}">
+<div class="cmd"><code>{markdown}</code>{copy}</div>
+</div>"""
+
+
+def write_badges_page(site, pond, base_url, entries, made):
+    """badges/index.html: the Pond's button, then each app's version badge in the landing page's order.
+    Image paths are relative, since the page sits in the badges folder."""
+    light, dark = theme.palettes(pond.theme)
+    alt = _e(badges.credit(pond))
+    cards = []
+    for entry in entries:
+        name = made.versions.get(entry["id"])
+        if not name:
+            continue
+        cards.append(BADGE_CARD.format(
+            name=_e(entry["name"]), badge=_e(Path(name).name), alt=alt, copy=COPY_BUTTON,
+            markdown=_e(badges.badge_snippet(pond, base_url, entry["id"], name))))
+    button_html, button_md = badges.button_snippets(pond, base_url)
+    page = BADGES_PAGE.format(
+        mode_attr="" if pond.mode == "system" else f' data-mode="{pond.mode}"',
+        title=_e(pond.title), favicon=images.FAVICON,
+        light=theme.css_variables(light), dark=theme.css_variables(dark),
+        button_light=Path(badges.BUTTON_LIGHT).name, button_dark=Path(badges.BUTTON_DARK).name,
+        button_width=made.button_width, alt=alt, copy=COPY_BUTTON,
+        button_html=_e(button_html), button_md=_e(button_md),
+        apps="\n".join(cards) or "<p>No apps yet.</p>")
+    Path(site, badges.PAGE, "index.html").write_text(page)
+
+
 # Card links from the metainfo, in this order; an app without one simply has no link.
 LINK_LABELS = (("homepage", "Website"), ("bugtracker", "Issue tracker"), ("donation", "Donate"))
 
@@ -418,7 +564,8 @@ def favicon_links(has_svg):
 
 def logo_markup(logo_name, dark_name):
     """The logo; with a dark one, both, and the page's CSS shows the one for the current appearance.
-    A <picture> could only follow the system's appearance, not the page's toggle."""
+    A <picture> could only follow the system's appearance, not the page's toggle. The alt text is
+    empty because the title heading beside the logo, visible or not, already names the Pond."""
     if not dark_name:
         return f'<img src="{_e(logo_name)}" alt="">'
     return (f'<img class="logo-light" src="{_e(logo_name)}" alt="">'
@@ -479,11 +626,13 @@ def ordered(entries, order):
 
 
 def write(site, pond, base_url, source_url, entries, logo_name, dark_name, has_svg_favicon, state,
-          custom_css=False, updated=None, social_name=None):
+          custom_css=False, updated=None, social_name=None, made_badges=None, wide_logo=False):
     """entries: dicts with id, name, summary, version, released, license, url, icon.
 
     updated is the publish time, shown on the page; it is not part of state.
     social_name is the shared-link image in the site, or None to offer the icon.
+    made_badges is what badges.write returned; apps.json then lists the badges.
+    wide_logo hides the title, which a wide logo already shows; it stays in the page for screen readers.
     """
     # The page and apps.json both follow pond.order.
     entries = ordered(entries, pond.order)
@@ -498,8 +647,7 @@ def write(site, pond, base_url, source_url, entries, logo_name, dark_name, has_s
             summary=_e(entry["summary"] or "No description yet."), facts=facts_markup(entry),
             remote=_e(pond.remote), app_id=_e(entry["id"]), links=links_markup(entry),
             # GNOME Software 48+ and KDE Discover 6.5+ open flatpak+https: links, as Flathub's button does.
-            open_url=_e(f"flatpak+{base_url}{entry['id']}.flatpakref"), chevron=CHEVRON, copy=COPY_BUTTON
-            if "github.com" in (entry["url"] or "") else ""))
+            open_url=_e(f"flatpak+{base_url}{entry['id']}.flatpakref"), chevron=CHEVRON, copy=COPY_BUTTON))
     source = f'<a href="{_e(source_url)}">{GITHUB_MARK}Source</a>' if source_url else ""
     light, dark = theme.palettes(pond.theme)
     page = PAGE.format(
@@ -512,6 +660,8 @@ def write(site, pond, base_url, source_url, entries, logo_name, dark_name, has_s
         favicons=favicon_links(has_svg_favicon),
         social=social_tags(pond, base_url, social_name),
         logo=logo_markup(logo_name, dark_name),
+        brand_class=" wide" if wide_logo else "",
+        title_class=' class="visually-hidden"' if wide_logo else "",
         source=source,
         mode_attr="" if pond.mode == "system" else f' data-mode="{pond.mode}"',
         mode_picker=mode_picker(pond.mode),
@@ -524,5 +674,13 @@ def write(site, pond, base_url, source_url, entries, logo_name, dark_name, has_s
     public = [{k: e.get(k) for k in ("id", "name", "summary", "version", "released", "license", "license_source", "links",
                                      "url", "icon", "arches")}
               for e in entries]
-    Path(site, STATE_FILE).write_text(json.dumps({"frogpak": 1, "updated": updated, "apps": public, "state": state},
-                                                 indent=2) + "\n")
+    data = {"frogpak": 1, "updated": updated, "apps": public}
+    if made_badges:
+        write_badges_page(site, pond, base_url, entries, made_badges)
+        for app in public:
+            if app["id"] in made_badges.versions:
+                app["badge"] = base_url + made_badges.versions[app["id"]]
+        data["badges"] = {"page": base_url + badges.PAGE, "button_light": base_url + badges.BUTTON_LIGHT,
+                          "button_dark": base_url + badges.BUTTON_DARK}
+    data["state"] = state
+    Path(site, STATE_FILE).write_text(json.dumps(data, indent=2) + "\n")
