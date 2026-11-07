@@ -28,6 +28,14 @@ Nothing to add. The Pond finds the release at its next hourly check.
 
 Apps released on Codeberg, Forgejo or Gitea use option 3, or option 2 by running the same `gh` command from their own CI. GitLab support is planned.
 
+## Apps mirrored from another forge
+
+If an app is developed on Forgejo or another forge and push-mirrored to GitHub, its GitHub releases need their tags to come from the source: a tag created on GitHub is deleted by the mirror's next sync, and its release goes back to being a draft that Ponds no longer see.
+
+- **With the FrogPak releaser:** set its `create-tags` input to `false`, and create each release's tag at the source. For Forgejo, the releaser provides a workflow that does it whenever the metainfo gets a new release; the [example app](https://github.com/FrogPak/example-app) already includes it. See the releaser's [Mirrored repositories](https://github.com/FrogPak/releaser#mirrored-repositories).
+- **With your own workflow:** build and release only on tags pushed from the source, never from a tag your workflow creates.
+- **Without GitHub releases:** point the Pond's `repo` at the source forge instead, such as `https://git.example.org/alex/notes`; a Pond reads releases from Forgejo and Gitea directly. See [Other forges](configuration.md#other-forges).
+
 ## Triggering a Pond
 
 A trigger starts the Pond's normal check early; a trigger with nothing new costs one quick check.
