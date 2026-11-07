@@ -91,6 +91,7 @@ a {{ color: var(--accent); }}
 .app h3 {{ margin: 0; font-size: 1.1rem; min-width: 0; overflow-wrap: break-word; }}
 /* The version wraps whole, under the name, rather than splitting. */
 .app h3 small {{ display: inline-block; white-space: nowrap; color: var(--muted); font-weight: normal; font-size: .85rem; }}
+.app-id {{ font: .75rem/1.4 ui-monospace, "Source Code Pro", monospace; color: var(--muted); overflow-wrap: anywhere; }}
 .app p {{ margin: .25rem 0 .75rem; }}
 .badge {{
   display: inline-block; font-size: .8rem; line-height: 1.4; color: var(--muted);
@@ -118,7 +119,18 @@ a {{ color: var(--accent); }}
 .visually-hidden {{
   position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
 }}
-.head {{ display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem .75rem; }}
+/* The app ID sits under the name, beside the Install button; on narrow screens, where the
+   name wraps below the button anyway, it takes the card's full width. */
+.head {{
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; column-gap: .75rem;
+  grid-template-areas: "name install" "id install";
+}}
+.head h3 {{ grid-area: name; }}
+.head .install {{ grid-area: install; }}
+.head .app-id {{ grid-area: id; }}
+@media (max-width: 34rem) {{
+  .head {{ grid-template-areas: "name install" "id id"; }}
+}}
 .install {{ position: relative; display: flex; flex: none; }}
 .install-main, .install summary {{
   background: var(--accent); color: var(--on-accent); cursor: pointer;
@@ -177,7 +189,7 @@ footer {{ margin-top: 3rem; font-size: .85rem; color: var(--muted); text-align: 
 <button type="button" data-scope="user" aria-pressed="false">User</button>
 </div>
 <div class="cmd"><code>flatpak remote-add<span class="scope"></span> --if-not-exists {remote} {base_url}index.flatpakrepo</code>{copy}</div>
-<p class="hint" data-for="system">For everyone on this computer. May ask for your password.</p>
+<p class="hint" data-for="system">For all user accounts. May require a password.</p>
 <p class="hint" data-for="user" hidden>For your account only. No password needed.</p>
 </div>
 
@@ -315,6 +327,7 @@ APP = """<div class="card app" id="{app_id}" data-arches="{arches}">
 </div>
 </details>
 </div>
+<div class="app-id">{app_id_breakable}</div>
 </div>
 <p>{summary}</p>
 <div class="facts">{facts}</div>
@@ -646,6 +659,8 @@ def write(site, pond, base_url, source_url, entries, logo_name, dark_name, has_s
             icon=icon, name=_e(entry["name"]), version=version, arches=_e(" ".join(entry.get("arches") or ())),
             summary=_e(entry["summary"] or "No description yet."), facts=facts_markup(entry),
             remote=_e(pond.remote), app_id=_e(entry["id"]), links=links_markup(entry),
+            # On narrow screens the app ID wraps after a dot rather than mid-word.
+            app_id_breakable=_e(entry["id"]).replace(".", ".<wbr>"),
             # GNOME Software 48+ and KDE Discover 6.5+ open flatpak+https: links, as Flathub's button does.
             open_url=_e(f"flatpak+{base_url}{entry['id']}.flatpakref"), chevron=CHEVRON, copy=COPY_BUTTON))
     source = f'<a href="{_e(source_url)}">{GITHUB_MARK}Source</a>' if source_url else ""

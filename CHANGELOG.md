@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.2
+
+- Each app's card shows its app ID under its name, small and muted.
+- The landing page's System hint reads "For all user accounts. May require a password." A system installation asks for an administrator's password, which is not always the visitor's own.
+
 ## 1.2.1
 
 - Version badges use `accent-dark` when the Pond's `theme.mode` is `dark`, matching the page's starting appearance. Their text color is still picked to contrast with it. Other modes keep `accent`.
