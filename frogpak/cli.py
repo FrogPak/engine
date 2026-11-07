@@ -153,6 +153,7 @@ def cmd_publish(args):
             "license": license,
             "license_source": license_source,
             "url": info.url,
+            "forge": sources.forge_for(state.app.repo, state.app.forge),
             "links": meta.links,
             "arches": sorted(r.split("/")[2] for r in refs),
         }

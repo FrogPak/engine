@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.0
+
+- Source links show the icon of the forge they point to: GitHub, Codeberg, Forgejo, Gitea or GitLab, by host, or by the app's forge for a self-hosted server, with a neutral code icon for anything else. Before, every Source link showed the GitHub logo. The icons are from [Simple Icons](https://simpleicons.org), CC0-1.0.
+
 ## 1.2.2
 
 - Each app's card shows its app ID under its name, small and muted.

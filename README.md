@@ -38,3 +38,5 @@ FrogPak's mascot is the golden mantella (*Mantella aurantiaca*), a tiny orange f
 ## License
 
 GPL-3.0-or-later. Ponds created from the template, and the apps they publish, are not covered by it.
+
+The forge icons on Source links are from [Simple Icons](https://simpleicons.org), CC0-1.0; the names and logos belong to their owners.
